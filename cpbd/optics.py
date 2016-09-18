@@ -7,8 +7,8 @@ from ocelot.cpbd.high_order import *
 from ocelot.cpbd.r_matrix import *
 from copy import deepcopy
 from ocelot.common.logging import Logger
-from numba import jit
 logger = Logger()
+from numba import jit
 
 
 def transform_vec_ent(X, dx, dy, tilt):
@@ -691,7 +691,7 @@ def lattice_transfer_map_RT_jit(lattice, energy):
     lattice.T = unsym_matrix_jit(deepcopy(Ta))
     lattice.R = Ra
 
-jit()
+@jit()
 def conv_T_jit(Ta,Tb,Tc,Ra,Rb):
     for i in range(6):
         for j in range(6):
