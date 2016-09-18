@@ -228,7 +228,7 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
     return res
 
 
-def match_matrix(lat, beam, varz, target_matrix):
+def match_matrix(lat, beam, varz, target_matrix, dim=2):
     def error_func(x):
 
         for i in range(len(varz)):
@@ -236,7 +236,7 @@ def match_matrix(lat, beam, varz, target_matrix):
                 varz[i].k1 = x[i]
                 varz[i].transfer_map = lat.method.create_tm(varz[i]) # create_transfer_map(varz[i])
 
-        R = lattice_transfer_map(lat, beam.E)[0:2, 0:2]
+        R = lattice_transfer_map(lat, beam.E)[0:dim, 0:dim]
         #print
         #R
         err = np.linalg.norm(np.abs(R - target_matrix) ** 2)
@@ -255,6 +255,33 @@ def match_matrix(lat, beam, varz, target_matrix):
 
     fmin(error_func, x, xtol=1e-8, maxiter=20000, maxfun=20000)
 
+def supermatch_matrix(lat,nrg,varz,target_matrix):
+    def error_func(x):
+
+        for i in range(len(varz)):
+            if varz[i].__class__ == Quadrupole:
+                varz[i].k1 = x[i]
+                varz[i].transfer_map = lat.method.create_tm(varz[i])
+
+        lattice_transfer_map_RT_jit(lat, nrg)
+        err = np.linalg.norm(np.abs(lat.R[:4,:4] - target_matrix) ** 2)  +\
+         np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
+        return err
+
+    x = [0.0] * len(varz)
+
+    for i in range(len(varz)):
+        if varz[i].__class__ == Quadrupole:
+            x[i] = varz[i].k1
+
+    print("initial value: x = ", x)
+    fmin(error_func, x, xtol=1e-9, maxiter=20000, maxfun=20000)
+
+    for i in range(len(varz)):
+        if varz[i].__class__ == Quadrupole:
+            x[i] = varz[i].k1
+    print("final value: x = ", x)
+    return x
 
 def match_tunes(lat, tw0, quads, nu_x, nu_y, ncells=1, print_proc=0):
     print("matching start .... ")
