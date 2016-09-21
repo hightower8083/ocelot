@@ -264,8 +264,13 @@ def supermatch_matrix(lat,nrg,varz,target_matrix):
                 varz[i].transfer_map = lat.method.create_tm(varz[i])
 
         lattice_transfer_map_RT_jit(lat, nrg)
-        err = np.linalg.norm(np.abs(lat.R[:4,:4] - target_matrix) ** 2)  +\
+
+        err = np.abs(lat.R[0,0]-target_matrix[0,0])**2 + np.abs(lat.R[2,2]-target_matrix[2,2])**2 +\
+         np.abs(lat.R[0,1])**2 + np.abs(lat.R[2,3])**2 +\
          np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
+#        err = np.linalg.norm(np.abs(lat.R[:4,:4] - target_matrix) ** 2)  +\
+#         np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
+
         return err
 
     x = [0.0] * len(varz)

@@ -642,8 +642,8 @@ def plot_trajectory(lat, list_particles):
     plt.show()
 
 
-def plot_API(lat, legend=True):
-    fig = plt.figure()
+def plot_API(lat, legend=True,**kw_fig):
+    fig = plt.figure(**kw_fig)
     plt.rc('axes', grid=True)
     plt.rc('grid', color='0.75', linestyle='-', linewidth=0.5)
     left, width = 0.1, 0.85
