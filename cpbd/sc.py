@@ -8,7 +8,6 @@ import numpy as np
 from time import time
 from ocelot.common.globals import *
 
-
 def smooth_z(Zin, mslice):
 
     def myfunc(x, A):
@@ -177,7 +176,6 @@ class SpaceCharge():
             xxstg[:, 3] = (1 - dpxyz_q_pref_z)*(xxstg[:, 3] + dpxyz_q_pref_y)
             xxstg[:, 5] = xxstg[:, 5] + dpxyz_q_pref_z*betref2
         
-        
     def SC_xp_update(self, xp, Q, gamref, dS, nxyz):
         #Lorentz transformation with z-axis and gamref
         betref2 = 1 - gamref**-2
@@ -220,5 +218,3 @@ def sc_track(lattice):
 """
         
 
-    
-    

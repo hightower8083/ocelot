@@ -671,7 +671,7 @@ def plot_API(lat, legend=True,**kw_fig):
 
     #plot_elems(ax_el, lat, nturns = 1, legend = True) # plot elements
     new_plot_elems(fig, ax_el, lat, nturns = 1, legend = legend)
-    return ax_xy
+    return ax_xy,ax_el
 
 
 def plot_traj_pulse(lat, list_particles, list_particles2, U1, U2):
