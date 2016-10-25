@@ -4,8 +4,6 @@ from ocelot.cpbd.e_beam_params import radiation_integrals
 from ocelot.cpbd.magnetic_lattice import MagneticLattice
 from ocelot.cpbd.optics import *
 
-
-
 def weights_default(val):
     if val == 'periodic': return 10000001.0
     if val == 'total_len': return 10000001.0
@@ -230,7 +228,6 @@ def match(lat, constr, vars, tw, verbose=True, max_iter=1000, method='simplex', 
 
 def match_matrix(lat, beam, varz, target_matrix, dim=2):
     def error_func(x):
-
         for i in range(len(varz)):
             if varz[i].__class__ == Quadrupole:
                 varz[i].k1 = x[i]
@@ -255,22 +252,48 @@ def match_matrix(lat, beam, varz, target_matrix, dim=2):
 
     fmin(error_func, x, xtol=1e-8, maxiter=20000, maxfun=20000)
 
-def supermatch_matrix(lat,nrg,varz,target_matrix):
+def foc_qap(lat, nrg, varz, MAG=None):
     def error_func(x):
+        for i in range(len(varz)):
+            if varz[i].__class__ == Quadrupole:
+                varz[i].k1 = x[i]
+                varz[i].transfer_map = lat.method.create_tm(varz[i]) # create_transfer_map(varz[i])
 
+        lattice_transfer_map_RT(lat, nrg)
+        err = np.abs(lat.R[0,1])**2 + np.abs(lat.R[2,3])**2
+        if MAG==True and type(MAG)!=list: err += (np.abs(lat.R[0,0])-np.abs(lat.R[2,2]))**2
+        if MAG != True and MAG != None  : err += (np.abs(lat.R[0,0])-MAG[0])**2 + (np.abs(lat.R[2,2])-MAG[1])**2
+        return err
+
+    x = [0.0] * len(varz)
+
+    for i in range(len(varz)):
+        if varz[i].__class__ == Quadrupole:
+            x[i] = varz[i].k1
+
+    print("initial value: x = ", x)
+    fmin(error_func, x)
+
+    for i in range(len(varz)):
+        if varz[i].__class__ == Quadrupole:
+            x[i] = varz[i].k1
+    print("final value: x = ", x)
+    return x
+
+def supermatch_matrix(lat,nrg,MAG,varz):
+    def error_func(x):
         for i in range(len(varz)):
             if varz[i].__class__ == Quadrupole:
                 varz[i].k1 = x[i]
                 varz[i].transfer_map = lat.method.create_tm(varz[i])
 
-        lattice_transfer_map_RT_jit(lat, nrg)
+        lattice_transfer_map_RT(lat, nrg)
 
-        err = np.abs(lat.R[0,0]-target_matrix[0,0])**2 + np.abs(lat.R[2,2]-target_matrix[2,2])**2 +\
+        err = (np.abs(lat.R[0,0])-MAG[0])**2 + (np.abs(lat.R[2,2])-MAG[1])**2 +\
          np.abs(lat.R[0,1])**2 + np.abs(lat.R[2,3])**2 +\
          np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
 #        err = np.linalg.norm(np.abs(lat.R[:4,:4] - target_matrix) ** 2)  +\
 #         np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
-
         return err
 
     x = [0.0] * len(varz)
