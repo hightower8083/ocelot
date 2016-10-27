@@ -280,7 +280,7 @@ def foc_qap(lat, nrg, varz, MAG=None):
     print("final value: x = ", x)
     return x
 
-def supermatch_matrix(lat,nrg,MAG,varz):
+def supermatch_matrix(lat,nrg,varz,MAG=True):
     def error_func(x):
         for i in range(len(varz)):
             if varz[i].__class__ == Quadrupole:
@@ -289,11 +289,14 @@ def supermatch_matrix(lat,nrg,MAG,varz):
 
         lattice_transfer_map_RT(lat, nrg)
 
-        err = (np.abs(lat.R[0,0])-MAG[0])**2 + (np.abs(lat.R[2,2])-MAG[1])**2 +\
-         np.abs(lat.R[0,1])**2 + np.abs(lat.R[2,3])**2 +\
-         np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
-#        err = np.linalg.norm(np.abs(lat.R[:4,:4] - target_matrix) ** 2)  +\
-#         np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2  + (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
+        err = np.abs(lat.R[0,1])**2 + np.abs(lat.R[2,3])**2 +\
+           np.abs(lat.T[1,1,5])**2 + np.abs(lat.T[3,3,5])**2 +\
+           (np.abs(lat.T[0,1,5])-np.abs(lat.T[2,3,5]))**2
+
+        if MAG == True:
+            err += (np.abs(lat.R[0,0])-np.abs(lat.R[2,2]))**2
+        elif MAG != True and MAG != None:
+             err += (np.abs(lat.R[0,0])-MAG[0])**2 + (np.abs(lat.R[2,2])-MAG[1])**2
         return err
 
     x = [0.0] * len(varz)

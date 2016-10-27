@@ -21,14 +21,15 @@ def make_beam(bm):
 		p_array_init.q_array = np.ones(bm['Np'])
 	return p_array_init
 
-def make_cell(corr_qap=[1,1,1], grad_nom=[170.,170.,170.]):
-	D1  = oclt.Drift(l=0.04685)
-	D2  = oclt.Drift(l=0.10295)
-	D3  = oclt.Drift(l=0.09895)
-	D4 = oclt.Drift(l=0.52085)
-	QAP1 = oclt.Quadrupole(l=0.047,  k1= grad_nom[0]*corr_qap[0])
-	QAP2 = oclt.Quadrupole(l=0.0511, k1= grad_nom[1]*corr_qap[1])
-	QAP3 = oclt.Quadrupole(l=0.0323, k1= grad_nom[2]*corr_qap[2])
+def make_cell(corr_qap=[1,1,1], grad_nom=[0.,0.,0.],\
+	  drifts=[0.04685,0.10295,0.09895,0.52085],lengths=[0.047,0.0511,0.0323]):
+	D1 = oclt.Drift(l=drifts[0])
+	D2 = oclt.Drift(l=drifts[1])
+	D3 = oclt.Drift(l=drifts[2])
+	D4 = oclt.Drift(l=drifts[3])
+	QAP1 = oclt.Quadrupole(l=lengths[0],  k1= grad_nom[0]*corr_qap[0])
+	QAP2 = oclt.Quadrupole(l=lengths[1], k1= grad_nom[1]*corr_qap[1])
+	QAP3 = oclt.Quadrupole(l=lengths[2], k1= grad_nom[2]*corr_qap[2])
 	cell = [D1, QAP1, D2, QAP2, D3, QAP3,D4]
 	return oclt.deepcopy(cell)
 
@@ -83,7 +84,7 @@ def make_shot(p_array_init,QAP_T,cell,meth=1):
 
 	return p_array, np.array([p_array.x().mean()*1e3,p_array.y().mean()*1e3])
 
-def test_bba(QAP_T,QAP_T_fixed,positions,corrections,p_array_init,grad_nom=[170.,170.,170.],meth=1):
+def test_bba(QAP_T,QAP_T_fixed,positions,corrections,p_array_init,grad_nom=[0.,0.,0.],meth=1):
 	err = 0.0
 	for i in range(len(positions)):
 		cell = make_cell(corrections[i],grad_nom)
@@ -91,7 +92,7 @@ def test_bba(QAP_T,QAP_T_fixed,positions,corrections,p_array_init,grad_nom=[170.
 		err += (cents[0]-positions[i][0])**2+(cents[1]-positions[i][1])**2
 	return err
 
-def test_bba1(QAP_T13,QAP_T_fixed2,positions,corrections,p_array_init,grad_nom=[170.,170.,170.],meth=1):
+def test_bba1(QAP_T13,QAP_T_fixed2,positions,corrections,p_array_init,grad_nom=[0.,0.,0.],meth=1):
 	err = 0.0
 	QAP_T13 = QAP_T13.reshape(2,2)
 	for i in range(len(positions)):
@@ -102,7 +103,7 @@ def test_bba1(QAP_T13,QAP_T_fixed2,positions,corrections,p_array_init,grad_nom=[
 		err += (cents[0]-positions[i][0])**2+(cents[1]-positions[i][1])**2
 	return err
 
-def test_bba2(QAP_T1,QAP_T_fixed23,positions,corrections,p_array_init,grad_nom=[170.,170.,170.],meth=1):
+def test_bba2(QAP_T1,QAP_T_fixed23,positions,corrections,p_array_init,grad_nom=[0.,0.,0.],meth=1):
 	err = 0.0
 	for i in range(len(positions)):
 		cell = make_cell(corrections[i],grad_nom)
@@ -130,6 +131,7 @@ def make_shot_aligned(p_array_init,cell,meth=1):
 def beam_plot_aligned(p_array_init,cell,ax=None,meth=1,**kw):
 	if ax==None: fig,ax = plt.subplots(1,1)
 	p_array, cents = make_shot_aligned(p_array_init,cell,meth=meth)
-	ax.hist2d(p_array.x()*1e3,p_array.y()*1e3,bins=400,range=[[-17,17],[-8,8]],cmap=plt.cm.viridis,**kw)
+	ax.hist2d(p_array.x()*1e3,p_array.y()*1e3,bins=400,cmap=plt.cm.viridis,**kw)
+#	ax.hist2d(p_array.x()*1e3,p_array.y()*1e3,bins=400,range=[[-17,17],[-8,8]],cmap=plt.cm.viridis,**kw)
 	if ax==None: plt.show()
 
