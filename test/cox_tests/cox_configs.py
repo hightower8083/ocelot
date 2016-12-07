@@ -35,13 +35,13 @@ QuadLengths['QEM2'] = 0.2
 QuadLengths['QEM3'] = 0.2
 QuadLengths['QEM4'] = 0.2
 
-QuadGradients['QAP1'] = 173.6018
-QuadGradients['QAP2'] = -170.3368
-QuadGradients['QAP3'] = 152.1236
-QuadGradients['QEM1'] = -13.7
-QuadGradients['QEM2'] = 10.6
-QuadGradients['QEM3'] = -11.7
-QuadGradients['QEM4'] = 3.4
+QuadGradients['QAP1'] = 174.38817348
+QuadGradients['QAP2'] = -172.5010446
+QuadGradients['QAP3'] = 152.8749925
+QuadGradients['QEM1'] = -4.071325
+QuadGradients['QEM2'] = 5.92344981
+QuadGradients['QEM3'] = -11.0760735
+QuadGradients['QEM4'] = 4.6894865
 
 DipLengths['DIP1'] = 0.2
 DipLengths['DIP2'] = 0.2
@@ -57,3 +57,4 @@ UndulConfigs['Period'] = 0.018
 UndulConfigs['Strength'] = 1.62
 UndulConfigs['NumPeriods'] = 107
 
+BeamEnergy_ref = 0.167
