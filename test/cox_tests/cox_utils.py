@@ -1,3 +1,9 @@
+"""
+This module contains the functions needed for OCELOT to model the COXINEL experiment. I
+In particular it deals with the broad-spectrum beam transport
+by I.A. Andriyash
+"""
+
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -8,6 +14,25 @@ method = oclt.MethodTM()
 method.global_method = oclt.SecondTM
 
 def sliced_spectrum(Emin,Emax,dg = 0.001,):
+	"""
+	Gets the array silced with fixed relative width
+
+	Parameters
+	----------
+	Emin : float
+	  Minimal value
+	Emax : float
+	  Maximal value
+	dg : float
+	  relative width of the slices
+
+	Returns
+	-------
+	nrg_sliced : array
+	  boundaries of the slices
+
+	"""
+
 	e_m = Emin
 	e_p = Emin
 	nrg_sliced = [e_m,]
@@ -18,6 +43,27 @@ def sliced_spectrum(Emin,Emax,dg = 0.001,):
 	return np.array(nrg_sliced)
 
 def make_beam_sliced(bm,dg=0.002):
+	"""
+	Makes a contineous spectrum beam as a list of slices
+
+	Parameters
+	----------
+	bm : dictionary
+	  beam input parameters as defined for make_beam_contin function
+	dg : float
+	  relative width of the slices
+
+	Returns
+	-------
+	p_arrays : list of oclt.ParticleArray objects
+	  list of the beams
+
+	See Also
+	--------
+	  make_beam and make_beam_contin
+
+	"""
+
 	p_arrays = []
 	E1 = bm['E'][0]
 	E2 = bm['E'][1]
@@ -34,6 +80,25 @@ def make_beam_sliced(bm,dg=0.002):
 	return p_arrays
 
 def make_beam(bm):
+	"""
+	Makes a beam with Gaussian phase distributions
+
+	Parameters
+	----------
+	bm : dictionary
+	  beam input parameters (in SI units): 
+	    Np -- full number of particles
+	    Lz, Rx, Ry -- spatial dimensions of the beam
+	    dE, Ox, Oy -- normalized momenta dispersions
+	    E -- beam mean energy (in GeV)
+	    Q -- full beam charge (in C)
+
+	Returns
+	-------
+	p_array : an oclt.ParticleArray object
+
+	"""
+
 	parts0 = np.zeros((6,bm['Np']))
 	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])
 	parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
@@ -52,6 +117,24 @@ def make_beam(bm):
 	return p_array
 
 def make_beam_contin(bm):
+	"""
+	Makes a beam with Gaussian phase distributions exept for energy spread which is flat-top
+
+	Parameters
+	----------
+	bm : dictionary
+	  beam input parameters as in make_beam exept for: 
+	    bm['E'] = (E1,E2) -- range of electron energies (in GeV)
+
+	Returns
+	-------
+	p_array : an oclt.ParticleArray object
+
+	See Also
+	--------
+	  make_beam
+
+	"""
 	p_array = oclt.ParticleArray()
 
 	E1 = bm['E'][0]
@@ -77,6 +160,29 @@ def make_beam_contin(bm):
 
 def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradients,DipLengths=DipLengths,\
   DipAngles=DipAngles,UndulConfigs=UndulConfigs,BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref):
+
+	"""
+	Makes a COXINEL-type transport line with drifts, dipoles, quadrupoles, undulator and few screens
+
+	Parameters
+	----------
+	Drifts, QuadLengths, QuadGradients, DipLengths,\
+	 DipAngles,UndulConfigs : dictionaries with elements as defined in cox_configs
+	BeamEnergy: float
+	  energy of the beam (in GeV)
+	BeamEnergy_ref: float
+	  reference energy of the beam for which lattcie gradients and angles are defined (in GeV)
+
+	Returns
+	-------
+	LattObjs : dictionary with ocelot.cpbd.elements
+
+	See Also
+	--------
+	  cox_configs
+
+	"""
+
 	DriftObjs = {}
 	QuadObjs = {}
 	DipObjs = {}
@@ -91,32 +197,38 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradient
 	LattObjs['UNDL'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	return LattObjs
 
-def aligh_slices(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
-  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method):
-	r56 = []
-	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices');sys.stdout.flush()
-	for i in range(len(p_arrays)):
-		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
-		if stop_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method)
-		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
-		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
-		r56.append(lat.R[4,5])
-
-	ds = [0,]
-	s_loc = 0.0
-	for i in range(1,len(p_arrays)):
-		de = 1-p_arrays[i].E/p_arrays[i-1].E
-		s_loc += de*r56[i]
-		ds.append(s_loc)
-	for i in range(len(p_arrays)):
-		p_arrays[i].s += ds[i]
-	return p_arrays
-
 def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
   BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method, Nit = 1,output = None, damping = None):
+
+	"""
+	Performs the transport simulation through a COXINEL-type transport line.
+
+	Parameters
+	----------
+	p_arrays: list or single oclt.ParticleArray object
+	Drifts, QuadLengths, QuadGradients, DipLengths,\
+	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as defined in make_line
+	stop_key : str
+	  key-name of lattice element at which to stop the transport
+	method : oclt.methodTM
+	  transport method (works with first or second orders)
+	Nit : int
+	  number of steps to perform (for output and damping resolutions)
+	output : dictionary or None
+	  outputs to perform as defined in beam_diags
+	damping: list, tuple or None
+	  If not None the particle losses in the limitied width pipe is performed as defined in damp_particles
+
+	Returns
+	-------
+	p_arrays : list of oclt.ParticleArray objects
+	outputs : dictionary with arrays
+
+	See Also
+	--------
+	  make_line, beam_diags, damp_particles
+
+	"""
 
 	latt_elmts = make_line(UndulConfigs=UndulConfigs)
 	if stop_key==None:
@@ -141,8 +253,6 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts['QEM4-UNDL'])
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
-		#sys.stdout.write('\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':')
-		#sys.stdout.flush()
 		for j in range(Nit):
 			sys.stdout.write(sss+'step '+str(j+1)+' of '+str(Nit))
 			oclt.tracking_step(lat, p_arrays[i], dz,navi)
@@ -165,18 +275,113 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 
 	return p_arrays, outputs
 
+def aligh_slices(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
+  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method):
+
+	"""
+	Alignes the slices of the spectrally sliced beam at the end of the transport simulation.
+
+	Parameters
+	----------
+	p_arrays: list of oclt.ParticleArray objects
+	Drifts, QuadLengths, QuadGradients, DipLengths,\
+	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as defined in make_line and make_shot
+	stop_key : str
+	  key-name of lattice element at which to stop the transport
+	method : oclt.methodTM
+	  transport method (works with first or second orders)
+
+	Returns
+	-------
+	p_arrays : list or single oclt.ParticleArray object
+
+	See Also
+	--------
+	  make_line, make_shot
+
+	"""
+
+	r56 = []
+	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices');sys.stdout.flush()
+	for i in range(len(p_arrays)):
+		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
+		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
+		if stop_key==None:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method)
+		else:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
+		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
+		r56.append(lat.R[4,5])
+
+	ds = [0,]
+	s_loc = 0.0
+	for i in range(1,len(p_arrays)):
+		de = 1-p_arrays[i].E/p_arrays[i-1].E
+		s_loc += de*r56[i]
+		ds.append(s_loc)
+	for i in range(len(p_arrays)):
+		p_arrays[i].s += ds[i]
+	return p_arrays
+
 def beam_diags(p_array, key):
-	if key == 'x':  return( p_array.x().sum())
-	if key == 'y':  return( p_array.y().sum())
-	if key == 'x2': return((p_array.x()**2).sum())
-	if key == 'y2': return((p_array.y()**2).sum())
-	if key == 'n':  return( p_array.size())
+	"""
+	Returns the sums of particles coordinates/momenta defined by key-names
+
+	Parameters
+	----------
+	p_array: oclt.ParticleArray object
+	key : str
+	  key-name of the coordinate to sum and return; can be:
+	    'x', 'y' for sum(x) and sum(y)
+	    'x2', 'y2' for sum(x**2) and sum(y**2) *
+	    'px', 'py' for sum(px) and sum(py)
+	    'px2', 'py2' for sum(px**2) and sum(py**2) *
+	    'n' for full number of particles
+	Returns
+	-------
+	value : float
+
+	See Also
+	--------
+	  make_shot
+
+	"""
+
+	if key == 'x':  val = p_array.x().sum()
+	if key == 'y':  val = p_array.y().sum()
+	if key == 'x2': val = (p_array.x()**2).sum()
+	if key == 'y2': val = (p_array.y()**2).sum()
+	if key == 'px':  val = p_array.px().sum()
+	if key == 'py':  val = p_array.py().sum()
+	if key == 'px2': val = (p_array.px()**2).sum()
+	if key == 'py2': val = (p_array.py()**2).sum()
+	if key == 'n':  val =  p_array.size()
+	return val
 
 def damp_particles(p_array, Rx,Ry):
-	Np = p_array.size
+	"""
+	Dumps the particles which overpass the limited pipe width
+
+	Parameters
+	----------
+	p_array: oclt.ParticleArray object
+	Rx,Ry : python functions
+	  X and Y pipe widths as the functions of distance: Rx(s) and Ry(s)
+	Returns
+	-------
+	p_array: oclt.ParticleArray object
+	Np : Number of remaining particles
+
+	See Also
+	--------
+	  make_shot
+
+	"""
+
 	s0 = p_array.s
 	Rx0, Ry0 = Rx(s0), Ry(s0)
 	indx = np.nonzero((np.abs(p_array.x())<Rx0)*(np.abs(p_array.y())<Ry0))[0]
 	p_array.particles = p_array.particles.reshape((p_array.size(),6))[indx,:].flatten()
-	return p_array, p_array.size()
+	Np = p_array.size()
+	return p_array, Np
 
