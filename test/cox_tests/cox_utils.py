@@ -9,6 +9,9 @@ import numpy as np
 import sys
 import ocelot as oclt
 from cox_configs import *
+from scipy.constants import m_e,c,e
+
+mc2_GeV = m_e*c**2/e*1e-9
 
 method = oclt.MethodTM()
 method.global_method = oclt.SecondTM
@@ -186,7 +189,7 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradient
 	DriftObjs = {}
 	QuadObjs = {}
 	DipObjs = {}
-	LattObjs = {}
+	LattObjs = {None:None,}
 	Latt = []
 	Ecorr = BeamEnergy_ref/BeamEnergy
 
@@ -194,7 +197,8 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradient
 	for key in QuadLengths.keys(): LattObjs[key] = oclt.Quadrupole(l=QuadLengths[key],k1=QuadGradients[key]*Ecorr)
 	for key in DipLengths.keys(): LattObjs[key] = oclt.RBend(l=DipLengths[key],angle=DipAngles[key]*Ecorr)
 	for key in  ['IMG1','IMG2','IMG4','IMG5',]: LattObjs[key] = oclt.Marker()
-	LattObjs['UNDL'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
+	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
+	LattObjs['UNDL2'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	return LattObjs
 
 def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
@@ -250,7 +254,7 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 	for i in range(len(p_arrays)):
 		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
         BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts['QEM4-UNDL'])
+		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
 		for j in range(Nit):
@@ -385,3 +389,51 @@ def damp_particles(p_array, Rx,Ry):
 	Np = p_array.size()
 	return p_array, Np
 
+def ocelot_to_chimera(p_arrays,beam,lam0):
+
+	"""
+	Exports the list of ParticleArrays from OCELOT to CHIMERA
+
+	Parameters
+	----------
+	p_arrays: list of oclt.ParticleArray objects
+	  beam represented in the form of slices list
+	beam : chimera.Species object
+	  CHIMERA species obejct to populate with particles
+	lam0: float
+	  normalization length for CHIMERA in meters
+
+	Returns
+	-------
+	beam : chimera.Species object
+		CHIMERA species obejct populated with particles
+	"""
+
+	Np = np.sum([p_array.size() for p_array in p_arrays])
+
+	xx = np.hstack(([-p_array.tau()/lam0 for p_array in p_arrays]))
+	yy = np.hstack(([p_array.x()/lam0 for p_array in p_arrays]))
+	zz = np.hstack(([p_array.y()/lam0 for p_array in p_arrays]))
+
+	px = np.hstack(([(p_array.p()+1)*p_array.E/mc2_GeV for p_array in p_arrays]))
+	py = np.hstack(([p_array.px()*p_array.E/mc2_GeV for p_array in p_arrays]))
+	pz = np.hstack(([p_array.py()*p_array.E/mc2_GeV for p_array in p_arrays]))
+	qq = np.hstack(([p_array.q_array*1e12 for p_array in p_arrays]))
+
+
+	beam.Data['coords'] = np.zeros((3,Np))
+	beam.Data['momenta'] = np.zeros((3,Np))
+	beam.Data['weights'] = np.zeros(Np)
+
+	beam.Data['coords'][0] = xx
+	beam.Data['coords'][1] = yy
+	beam.Data['coords'][2] = zz
+
+	beam.Data['momenta'][0] = px
+	beam.Data['momenta'][1] = py
+	beam.Data['momenta'][2] = pz
+
+	beam.Data['weights'][:] = -qq/(beam.weight2pC*lam0)
+	beam.Data['coords_halfstep'] = beam.Data['coords'].copy()
+
+	return  beam

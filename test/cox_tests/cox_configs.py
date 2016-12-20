@@ -8,7 +8,7 @@ UndulConfigs = {}
 cell_keys = ['LPWA-QAP1','QAP1','QAP1-QAP2','QAP2','QAP2-QAP3','QAP3','QAP3-IMG1','IMG1',\
   'IMG1-DIP1','DIP1','DIP1-DIP2','DIP2','DIP2-IMG2','IMG2','IMG2-DIP3','DIP3','DIP3-DIP4','DIP4',\
   'DIP4-QEM1','QEM1','QEM1-QEM2','QEM2','QEM2-IMG4','IMG4','IMG4-QEM3','QEM3','QEM3-QEM4','QEM4',\
-  'QEM4-UNDL','UNDL','UNDL-IMG5','IMG5']
+  'QEM4-UNDL','UNDL1','UNDL2','UNDL-IMG5','IMG5']
 
 Drifts['LPWA-QAP1'] = 0.04685
 Drifts['QAP1-QAP2'] = 0.10295
@@ -55,6 +55,6 @@ DipAngles['DIP4'] = 1.
 
 UndulConfigs['Period'] = 0.018
 UndulConfigs['Strength'] = 1.62
-UndulConfigs['NumPeriods'] = 107
+UndulConfigs['NumPeriods'] = 54
 
 BeamEnergy_ref = 0.167
