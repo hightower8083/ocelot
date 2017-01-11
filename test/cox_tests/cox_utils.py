@@ -1,6 +1,8 @@
 """
-This module contains the functions needed for OCELOT to model the COXINEL experiment. I
-In particular it deals with the broad-spectrum beam transport
+This module contains the functions needed for OCELOT to model 
+the COXINEL experiment. In particular it deals with the broad-spectrum 
+beam transport.
+
 by I.A. Andriyash
 """
 
@@ -73,7 +75,9 @@ def make_beam_sliced(bm,dg=0.002):
 	nrg_sliced =  sliced_spectrum(E1,E2,dg=dg)
 	nrg_cntrs = 0.5*(nrg_sliced[1:]+nrg_sliced[:-1])
 	Nbeams = nrg_sliced.shape[0]-1
-	part_per_slice = np.round(bm['Np']*(nrg_sliced[1:]-nrg_sliced[:-1])/(nrg_sliced[-1]-nrg_sliced[0])).astype('i')
+	part_per_slice = np.round(bm['Np'] \
+	  *(nrg_sliced[1:]-nrg_sliced[:-1]) \
+	  /(nrg_sliced[-1]-nrg_sliced[0])).astype('i')
 	for i in range(Nbeams):
 		beam = oclt.deepcopy(bm)
 		beam['Np'] = part_per_slice[i]
@@ -121,7 +125,8 @@ def make_beam(bm):
 
 def make_beam_contin(bm):
 	"""
-	Makes a beam with Gaussian phase distributions exept for energy spread which is flat-top
+	Makes a beam with Gaussian phase distributions, 
+	exept for energy spread which is flat-top
 
 	Parameters
 	----------
@@ -161,20 +166,25 @@ def make_beam_contin(bm):
 		p_array.q_array = np.ones(bm['Np'])
 	return p_array
 
-def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref):
+def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
+  QuadGradients=QuadGradients,DipLengths=DipLengths,\
+  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
+	BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref):
 
 	"""
-	Makes a COXINEL-type transport line with drifts, dipoles, quadrupoles, undulator and few screens
+	Makes a COXINEL-type transport line with drifts, dipoles, 
+	quadrupoles, undulator and few screens
 
 	Parameters
 	----------
 	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs : dictionaries with elements as defined in cox_configs
+	 DipAngles,UndulConfigs : dictionaries with elements as 
+	 defined in cox_configs
 	BeamEnergy: float
 	  energy of the beam (in GeV)
 	BeamEnergy_ref: float
-	  reference energy of the beam for which lattcie gradients and angles are defined (in GeV)
+	  reference energy of the beam for which lattice gradients 
+	  and angles are defined (in GeV)
 
 	Returns
 	-------
@@ -194,15 +204,21 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,QuadGradients=QuadGradient
 	Ecorr = BeamEnergy_ref/BeamEnergy
 
 	for key in Drifts.keys(): LattObjs[key] = oclt.Drift(l=Drifts[key])
-	for key in QuadLengths.keys(): LattObjs[key] = oclt.Quadrupole(l=QuadLengths[key],k1=QuadGradients[key]*Ecorr)
-	for key in DipLengths.keys(): LattObjs[key] = oclt.RBend(l=DipLengths[key],angle=DipAngles[key]*Ecorr)
+	for key in QuadLengths.keys(): LattObjs[key] = \
+	  oclt.Quadrupole(l=QuadLengths[key],k1=QuadGradients[key]*Ecorr)
+	for key in DipLengths.keys(): LattObjs[key] = \
+	  oclt.RBend(l=DipLengths[key],angle=DipAngles[key]*Ecorr)
 	for key in  ['IMG1','IMG2','IMG4','IMG5',]: LattObjs[key] = oclt.Marker()
-	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
-	LattObjs['UNDL2'] = oclt.Undulator(Kx=UndulConfigs['Strength'],nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
+	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
+	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
+	LattObjs['UNDL2'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
+	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	return LattObjs
 
-def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
-  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method, Nit = 1,output = None, damping = None):
+def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
+  UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref, \
+  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method, \
+  Nit = 1,output = None, damping = None):
 
 	"""
 	Performs the transport simulation through a COXINEL-type transport line.
@@ -211,7 +227,8 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 	----------
 	p_arrays: list or single oclt.ParticleArray object
 	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as defined in make_line
+	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
+	 defined in make_line
 	stop_key : str
 	  key-name of lattice element at which to stop the transport
 	method : oclt.methodTM
@@ -221,7 +238,8 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 	output : dictionary or None
 	  outputs to perform as defined in beam_diags
 	damping: list, tuple or None
-	  If not None the particle losses in the limitied width pipe is performed as defined in damp_particles
+	  If not None the particle losses in the limitied width pipe is 
+	  performed as defined in damp_particles
 
 	Returns
 	-------
@@ -236,9 +254,11 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 
 	latt_elmts = make_line(UndulConfigs=UndulConfigs)
 	if stop_key==None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method)
+		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+		  method=method)
 	else:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
+		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
+		  method=method,stop=latt_elmts[stop_key])
 	dz = lat.totalLen/Nit
 	if type(p_arrays)!=list: p_arrays = [p_arrays,]
 
@@ -252,9 +272,11 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 		outputs['s'] = dz*np.arange(Nit)
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-        BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
+		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles, \
+		  UndulConfigs=UndulConfigs, BeamEnergy=p_arrays[i].E, \
+		  BeamEnergy_ref=BeamEnergy_ref)
+		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+		  method=method,stop=latt_elmts[stop_key])
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
 		for j in range(Nit):
@@ -275,21 +297,25 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConf
 			p_arrays.pop(i-poped)
 			poped += 1
 		if poped>0: 
-			sys.stdout.write('\n'+str(poped)+' slices are lost');sys.stdout.flush()
+			sys.stdout.write('\n'+str(poped)+' slices are lost')
+			sys.stdout.flush()
 
 	return p_arrays, outputs
 
-def aligh_slices(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
+def aligh_slices(p_arrays,QuadGradients=QuadGradients, \
+  DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
   BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method):
 
 	"""
-	Alignes the slices of the spectrally sliced beam at the end of the transport simulation.
+	Alignes the slices of the spectrally sliced beam at the end of 
+	the transport simulation.
 
 	Parameters
 	----------
 	p_arrays: list of oclt.ParticleArray objects
 	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as defined in make_line and make_shot
+	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
+	 defined in make_line and make_shot
 	stop_key : str
 	  key-name of lattice element at which to stop the transport
 	method : oclt.methodTM
@@ -306,14 +332,18 @@ def aligh_slices(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,UndulC
 	"""
 
 	r56 = []
-	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices');sys.stdout.flush()
+	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices')
+	sys.stdout.flush()
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
+		latt_elmts = make_line(QuadGradients=QuadGradients, \
+		  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
 		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
 		if stop_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method)
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+			  method=method)
 		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],method=method,stop=latt_elmts[stop_key])
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+			  method=method,stop=latt_elmts[stop_key])
 		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
 		r56.append(lat.R[4,5])
 
@@ -385,12 +415,12 @@ def damp_particles(p_array, Rx,Ry):
 	s0 = p_array.s
 	Rx0, Ry0 = Rx(s0), Ry(s0)
 	indx = np.nonzero((np.abs(p_array.x())<Rx0)*(np.abs(p_array.y())<Ry0))[0]
-	p_array.particles = p_array.particles.reshape((p_array.size(),6))[indx,:].flatten()
+	p_array.particles = \
+	  p_array.particles.reshape((p_array.size(),6))[indx,:].flatten()
 	Np = p_array.size()
 	return p_array, Np
 
 def ocelot_to_chimera(p_arrays,beam,lam0):
-
 	"""
 	Exports the list of ParticleArrays from OCELOT to CHIMERA
 
@@ -420,7 +450,6 @@ def ocelot_to_chimera(p_arrays,beam,lam0):
 	pz = np.hstack(([p_array.py()*p_array.E/mc2_GeV for p_array in p_arrays]))
 	qq = np.hstack(([p_array.q_array*1e12 for p_array in p_arrays]))
 
-
 	beam.Data['coords'] = np.zeros((3,Np))
 	beam.Data['momenta'] = np.zeros((3,Np))
 	beam.Data['weights'] = np.zeros(Np)
@@ -433,7 +462,22 @@ def ocelot_to_chimera(p_arrays,beam,lam0):
 	beam.Data['momenta'][1] = py
 	beam.Data['momenta'][2] = pz
 
-	beam.Data['weights'][:] = -qq/(beam.weight2pC*lam0)
+	beam.Data['weights'][:] = -qq/(beam.weight2pC*lam0*1e6)
+	beam.Data['coords'][0] -= (beam.Data['coords'][0]*beam.Data['weights']\
+	  ).sum()/(beam.Data['weights']).sum()
 	beam.Data['coords_halfstep'] = beam.Data['coords'].copy()
-
 	return  beam
+
+def print_latt_chars(lat, BeamEnergy):
+	"""
+	Prints some elements of the transport matrices
+	Parameters
+	----------
+	lat: MagneticLattice object
+	BeamEnergy : float
+	  Electron energy in GEVs
+   """
+	oclt.cpbd.optics.lattice_transfer_map_RT(lat,BeamEnergy)
+	params = [lat.R[0,0],lat.R[2,2],lat.R[4,5]*1000,\
+	  lat.T[1,1,5], lat.T[3,3,5],lat.T[0,1,5],lat.T[2,3,5]]
+	print latt_par_string.format(*params)

@@ -280,7 +280,7 @@ def foc_qap(lat, nrg, varz, MAG=None):
     print("final value: x = ", x)
     return x
 
-def supermatch_matrix(lat,nrg,varz,MAG=True):
+def supermatch_matrix(lat,nrg,varz,MAG=True, printout=True):
     def error_func(x):
         for i in range(len(varz)):
             if varz[i].__class__ == Quadrupole:
@@ -305,13 +305,13 @@ def supermatch_matrix(lat,nrg,varz,MAG=True):
         if varz[i].__class__ == Quadrupole:
             x[i] = varz[i].k1
 
-    print("initial value: x = ", x)
-    fmin(error_func, x, xtol=1e-9, maxiter=20000, maxfun=20000)
+    if printout: print("initial value: x = ", x)
+    fmin(error_func, x, xtol=1e-9, maxiter=20000, maxfun=20000,disp=printout)
 
     for i in range(len(varz)):
         if varz[i].__class__ == Quadrupole:
             x[i] = varz[i].k1
-    print("final value: x = ", x)
+    if printout: print("final value: x = ", x)
     return x
 
 def match_tunes(lat, tw0, quads, nu_x, nu_y, ncells=1, print_proc=0):
