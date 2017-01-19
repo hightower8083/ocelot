@@ -203,12 +203,33 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	Latt = []
 	Ecorr = BeamEnergy_ref/BeamEnergy
 
-	for key in Drifts.keys(): LattObjs[key] = oclt.Drift(l=Drifts[key])
-	for key in QuadLengths.keys(): LattObjs[key] = \
-	  oclt.Quadrupole(l=QuadLengths[key],k1=QuadGradients[key]*Ecorr)
-	for key in DipLengths.keys(): LattObjs[key] = \
-	  oclt.RBend(l=DipLengths[key],angle=DipAngles[key]*Ecorr)
-	for key in  ['IMG1','IMG2','IMG4','IMG5',]: LattObjs[key] = oclt.Marker()
+	for key in Drifts.keys(): 
+		LattObjs[key] = oclt.Drift(l=Drifts[key])
+
+	for key in QuadLengths.keys():
+		LattObjs[key] = oclt.Quadrupole( \
+		  l=QuadLengths[key], k1=QuadGradients[key]*Ecorr )
+		
+	for key in DipLengths.keys():
+		if key == 'DIP1':
+			e1 = 0.0;
+			e2 = DipAngles[key]*Ecorr;
+		elif key == 'DIP2':
+			e1 = DipAngles[key]*Ecorr;
+			e2 =  0.0;
+		elif key == 'DIP3':
+			e1 =  0.0;
+			e2 = -DipAngles[key]*Ecorr;
+		elif key == 'DIP4':
+			e1 = -DipAngles[key]*Ecorr;
+			e2 = 0.0;
+
+		LattObjs[key] = oclt.RBend( \
+		  l=DipLengths[key], angle=DipAngles[key]*Ecorr)
+
+	for key in  ['IMG1','IMG2','IMG4','IMG5',]: 
+		LattObjs[key] = oclt.Marker()
+
 	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
 	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	LattObjs['UNDL2'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
@@ -440,15 +461,22 @@ def ocelot_to_chimera(p_arrays,beam,lam0):
 	"""
 
 	Np = np.sum([p_array.size() for p_array in p_arrays])
+	g0 = p_array.E/mc2_GeV
 
 	xx = np.hstack(([-p_array.tau()/lam0 for p_array in p_arrays]))
-	yy = np.hstack(([p_array.x()/lam0 for p_array in p_arrays]))
-	zz = np.hstack(([p_array.y()/lam0 for p_array in p_arrays]))
+	yy = np.hstack(([p_array.y()/lam0 for p_array in p_arrays]))
+	zz = np.hstack(([p_array.x()/lam0 for p_array in p_arrays]))
 
-	px = np.hstack(([(p_array.p()+1)*p_array.E/mc2_GeV for p_array in p_arrays]))
-	py = np.hstack(([p_array.px()*p_array.E/mc2_GeV for p_array in p_arrays]))
-	pz = np.hstack(([p_array.py()*p_array.E/mc2_GeV for p_array in p_arrays]))
+	gg = np.hstack(([(p_array.p()+1)*g0 for p_array in p_arrays]))
+	oy = np.hstack(([p_array.py() for p_array in p_arrays]))
+	oz = np.hstack(([p_array.px() for p_array in p_arrays]))
+
 	qq = np.hstack(([p_array.q_array*1e12 for p_array in p_arrays]))
+
+	px = np.sqrt( (gg**2-1.)/(1+oy**2+oz**2) )
+	py = px*oy
+	pz = px*oz
+	gg, oy, oz = None, None, None
 
 	beam.Data['coords'] = np.zeros((3,Np))
 	beam.Data['momenta'] = np.zeros((3,Np))
