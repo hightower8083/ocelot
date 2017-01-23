@@ -5,12 +5,10 @@ DipLengths = {}
 DipAngles = {}
 UndulConfigs = {}
 
-cell_keys = ['LPWA-QAP1','QAP1','QAP1-QAP2','QAP2','QAP2-QAP3','QAP3', \
-  'QAP3-IMG1','IMG1','IMG1-DIP1','DIP1','DIP1-DIP2','DIP2', \
-  'DIP2-IMG2','IMG2','IMG2-DIP3','DIP3','DIP3-DIP4','DIP4', \
-  'DIP4-QEM1','QEM1','QEM1-QEM2','QEM2','QEM2-IMG4','IMG4', \
-  'IMG4-QEM3','QEM3','QEM3-QEM4','QEM4','QEM4-UNDL','UNDL1','UNDL2', \
-  'UNDL-IMG5','IMG5']
+cell_keys = ['LPWA-QAP1','QAP1','QAP1-QAP2','QAP2','QAP2-QAP3','QAP3','QAP3-IMG1','IMG1',\
+  'IMG1-DIP1','DIP1','DIP1-DIP2','DIP2','DIP2-IMG2','IMG2','IMG2-DIP3','DIP3','DIP3-DIP4','DIP4',\
+  'DIP4-QEM1','QEM1','QEM1-QEM2','QEM2','QEM2-IMG4','IMG4','IMG4-QEM3','QEM3','QEM3-QEM4','QEM4',\
+  'QEM4-UNDL','UNDL1','UNDL2','UNDL-IMG5','IMG5']
 
 Drifts['LPWA-QAP1'] = 0.04685
 Drifts['QAP1-QAP2'] = 0.10295
@@ -41,13 +39,13 @@ QuadLengths['QEM2'] = 0.2
 QuadLengths['QEM3'] = 0.2
 QuadLengths['QEM4'] = 0.2
 
-QuadGradients['QAP1'] = 181.8104861
-QuadGradients['QAP2'] = -173.77861
-QuadGradients['QAP3'] = 149.8627568
-QuadGradients['QEM1'] = -6.678286447
-QuadGradients['QEM2'] = 8.24187321
-QuadGradients['QEM3'] = -5.203903
-QuadGradients['QEM4'] = 0.068533
+QuadGradients['QAP1'] = 175.8703
+QuadGradients['QAP2'] = -173.622
+QuadGradients['QAP3'] = 150.2504
+QuadGradients['QEM1'] = -6.678787
+QuadGradients['QEM2'] = 8.127195
+QuadGradients['QEM3'] = -4.970518
+QuadGradients['QEM4'] = 0.04438066
 
 DipLengths['DIP1'] = 0.2
 DipLengths['DIP2'] = 0.2
