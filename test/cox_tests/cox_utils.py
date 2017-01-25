@@ -47,7 +47,7 @@ def sliced_spectrum(Emin,Emax,dg = 0.001,):
 		e_m = e_p
 	return np.array(nrg_sliced)
 
-def make_beam_sliced(bm,dg=0.002):
+def make_beam_sliced(bm,dg=0.002,div_chirp=None):
 	"""
 	Makes a contineous spectrum beam as a list of slices
 
@@ -83,7 +83,7 @@ def make_beam_sliced(bm,dg=0.002):
 		beam['Np'] = part_per_slice[i]
 		beam['Q'] /= Nbeams
 		beam['E'] = (nrg_sliced[i],nrg_sliced[i+1])
-		p_arrays.append(make_beam_contin(beam))
+		p_arrays.append(make_beam_contin(beam,div_chirp=div_chirp))
 	return p_arrays
 
 def make_beam(bm):
@@ -123,7 +123,7 @@ def make_beam(bm):
 		p_array.q_array = np.ones(bm['Np'])
 	return p_array
 
-def make_beam_contin(bm):
+def make_beam_contin(bm, div_chirp=None):
 	"""
 	Makes a beam with Gaussian phase distributions, 
 	exept for energy spread which is flat-top
@@ -152,11 +152,22 @@ def make_beam_contin(bm):
 
 	parts0 = np.zeros((6,bm['Np']))
 	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])
-	parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
 	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])
-	parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
 	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])
 	parts0[5] = dE*(2*np.random.rand(bm['Np'])-1)
+
+	if div_chirp!=None:
+		pz0 = np.sqrt( (div_chirp/mc2_GeV)**2-1. )
+		pz = (p_array.E/mc2_GeV)*(1+parts0[5])
+
+		px =  bm['Ox']*pz0*np.random.randn(bm['Np'])
+		py =  bm['Oy']*pz0*np.random.randn(bm['Np'])
+		
+		parts0[1] = px/pz
+		parts0[3] = py/pz
+	else:
+		parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
+		parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
 
 	p_array.particles = parts0.T.flatten()
 	p_array.s = 0.0
@@ -404,8 +415,10 @@ def beam_diags(p_array, key):
 
 	if key == 'x':  val = p_array.x().sum()
 	if key == 'y':  val = p_array.y().sum()
+	if key == 'z':  val = -p_array.tau().sum()
 	if key == 'x2': val = (p_array.x()**2).sum()
 	if key == 'y2': val = (p_array.y()**2).sum()
+	if key == 'z2': val = (p_array.tau()**2).sum()
 	if key == 'px':  val = p_array.px().sum()
 	if key == 'py':  val = p_array.py().sum()
 	if key == 'px2': val = (p_array.px()**2).sum()
@@ -441,7 +454,7 @@ def damp_particles(p_array, Rx,Ry):
 	Np = p_array.size()
 	return p_array, Np
 
-def ocelot_to_chimera(p_arrays,beam,lam0):
+def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
 	"""
 	Exports the list of ParticleArrays from OCELOT to CHIMERA
 
@@ -494,6 +507,8 @@ def ocelot_to_chimera(p_arrays,beam,lam0):
 	beam.Data['coords'][0] -= (beam.Data['coords'][0]*beam.Data['weights']\
 	  ).sum()/(beam.Data['weights']).sum()
 	beam.Data['coords_halfstep'] = beam.Data['coords'].copy()
+	if keep_orig is False: 
+		del p_arrays
 	return  beam
 
 def print_latt_chars(lat, BeamEnergy):
