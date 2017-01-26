@@ -247,10 +247,11 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	return LattObjs
 
-def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
-  UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref, \
-  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method, \
-  Nit = 1,output = None, damping = None):
+def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
+  QuadGradients=QuadGradients,DipLengths=DipLengths,\
+  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
+  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,\
+  stop_key=None, method=method, Nit = 1,output = None, damping = None):
 
 	"""
 	Performs the transport simulation through a COXINEL-type transport line.
@@ -284,7 +285,12 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
 
 	"""
 
-	latt_elmts = make_line(UndulConfigs=UndulConfigs)
+	latt_elmts = make_line(\
+	  Drifts = Drifts, QuadLengths=QuadLengths,\
+	  QuadGradients=QuadGradients, DipLengths=DipLengths,\
+	  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
+	  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,)
+
 	if stop_key==None:
 		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
 		  method=method)
@@ -297,21 +303,24 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
 	outputs = {}
 	if damping!=None:
 		sys.stdout.write('Particle losses activated \n');sys.stdout.flush()
-		outputs['staying'] = np.zeros(Nit)
+		outputs['staying'] = np.zeros(Nit+1)
 		to_pop = []
 	if output!=None:
-		for key in output: outputs[key] = np.zeros(Nit)
-		outputs['s'] = dz*np.arange(Nit)
+		for key in output: outputs[key] = np.zeros(Nit+1)
+		outputs['s'] = dz*np.arange(Nit+1)
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(QuadGradients=QuadGradients,DipAngles=DipAngles, \
-		  UndulConfigs=UndulConfigs, BeamEnergy=p_arrays[i].E, \
-		  BeamEnergy_ref=BeamEnergy_ref)
+		latt_elmts = make_line(\
+		  Drifts = Drifts, QuadLengths=QuadLengths,\
+		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
+		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
+		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
+
 		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
 		  method=method,stop=latt_elmts[stop_key])
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
-		for j in range(Nit):
+		for j in range(Nit+1):
 			sys.stdout.write(sss+'step '+str(j+1)+' of '+str(Nit))
 			oclt.tracking_step(lat, p_arrays[i], dz,navi)
 			if damping!=None:
@@ -321,7 +330,8 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
 					to_pop.append(i)
 					break
 			if output!=None:
-				for key in output: outputs[key][j] += beam_diags(p_arrays[i],key)
+				for key in output: 
+					outputs[key][j] += beam_diags(p_arrays[i],key)
 
 	if damping!=None:
 		poped = 0
@@ -334,9 +344,11 @@ def make_shot(p_arrays,QuadGradients=QuadGradients,DipAngles=DipAngles,\
 
 	return p_arrays, outputs
 
-def aligh_slices(p_arrays,QuadGradients=QuadGradients, \
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs, BeamEnergy=BeamEnergy_ref,\
-  BeamEnergy_ref=BeamEnergy_ref, stop_key=None, method=method):
+def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
+  QuadGradients=QuadGradients,DipLengths=DipLengths,\
+  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
+  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,\
+  stop_key=None, method=method):
 
 	"""
 	Alignes the slices of the spectrally sliced beam at the end of 
@@ -367,9 +379,12 @@ def aligh_slices(p_arrays,QuadGradients=QuadGradients, \
 	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices')
 	sys.stdout.flush()
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(QuadGradients=QuadGradients, \
-		  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
+		latt_elmts = make_line(\
+		  Drifts = Drifts, QuadLengths=QuadLengths,\
+		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
+		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
+		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
+
 		if stop_key==None:
 			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
 			  method=method)
@@ -416,13 +431,54 @@ def beam_diags(p_array, key):
 	if key == 'x':  val = p_array.x().sum()
 	if key == 'y':  val = p_array.y().sum()
 	if key == 'z':  val = -p_array.tau().sum()
+
 	if key == 'x2': val = (p_array.x()**2).sum()
 	if key == 'y2': val = (p_array.y()**2).sum()
 	if key == 'z2': val = (p_array.tau()**2).sum()
-	if key == 'px':  val = p_array.px().sum()
-	if key == 'py':  val = p_array.py().sum()
-	if key == 'px2': val = (p_array.px()**2).sum()
-	if key == 'py2': val = (p_array.py()**2).sum()
+
+	if key == 'xp':  val = p_array.px().sum()
+	if key == 'yp':  val = p_array.py().sum()
+	if key == 'zp':  val = p_array.p().sum()
+
+	if key == 'xp2': val = (p_array.px()**2).sum()
+	if key == 'yp2': val = (p_array.py()**2).sum()
+	if key == 'zp2': val = (p_array.p()**2).sum()
+
+	if key == 'px':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		val = (p_array.px()*gg).sum()
+	if key == 'py':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		val = (p_array.py()*gg).sum()
+	if key == 'pz':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		val = gg.sum()
+
+	if key == 'px2':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		pz = np.sqrt(gg**2-1/(1+p_array.px()**2+p_array.py()**2))
+		val = ((p_array.px()*pz)**2).sum()
+	if key == 'py2':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		pz = np.sqrt(gg**2-1/(1+p_array.px()**2+p_array.py()**2))
+		val = ((p_array.py()*pz)**2).sum()
+	if key == 'pz2':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		pz = np.sqrt(gg**2-1/(1+p_array.px()**2+p_array.py()**2))
+		val = (pz**2).sum()
+
+	if key == 'xxp': val = (p_array.x()*p_array.px()).sum()
+	if key == 'yyp': val = (p_array.y()*p_array.py()).sum()
+
+	if key == 'xpx':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		pz = np.sqrt(gg**2-1/(1+p_array.px()**2+p_array.py()**2))
+		val = (p_array.x()*p_array.px()*pz).sum()
+	if key == 'ypy':
+		gg = (1+p_array.p())*p_array.E/mc2_GeV
+		pz = np.sqrt(gg**2-1/(1+p_array.px()**2+p_array.py()**2))
+		val = (p_array.y()*p_array.py()*pz).sum()
+
 	if key == 'n':  val =  p_array.size()
 	return val
 
