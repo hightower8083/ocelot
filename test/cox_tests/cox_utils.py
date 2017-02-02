@@ -107,11 +107,15 @@ def make_beam(bm):
 	"""
 
 	parts0 = np.zeros((6,bm['Np']))
-	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])
+	if 'X0' not in bm: bm['X0'] = 0.
+	if 'Y0' not in bm: bm['Y0'] = 0.
+	if 'Z0' not in bm: bm['Z0'] = 0.
+
+	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])+bm['X0']
+	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])+bm['Y0']
+	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])+bm['Z0']
 	parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
-	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])
 	parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
-	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])
 	parts0[5] = bm['dE']*np.random.randn(bm['Np'])
 	p_array = oclt.ParticleArray()
 	p_array.particles = parts0.T.flatten()
@@ -131,7 +135,7 @@ def make_beam_contin(bm, div_chirp=None):
 	Parameters
 	----------
 	bm : dictionary
-	  beam input parameters as in make_beam exept for: 
+	  beam input parameters as in make_beam except for: 
 	    bm['E'] = (E1,E2) -- range of electron energies (in GeV)
 
 	Returns
@@ -150,10 +154,14 @@ def make_beam_contin(bm, div_chirp=None):
 	dE = (E2-E1)/(E2+E1)
 	p_array.E = 0.5*(E2+E1)
 
+	if 'X0' not in bm: bm['X0'] = 0.
+	if 'Y0' not in bm: bm['Y0'] = 0.
+	if 'Z0' not in bm: bm['Z0'] = 0.
+
 	parts0 = np.zeros((6,bm['Np']))
-	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])
-	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])
-	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])
+	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])+bm['X0']
+	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])+bm['Y0']
+	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])+bm['Z0']
 	parts0[5] = dE*(2*np.random.rand(bm['Np'])-1)
 
 	if div_chirp!=None:
