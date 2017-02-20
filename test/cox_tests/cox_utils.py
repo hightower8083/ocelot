@@ -20,7 +20,7 @@ method.global_method = oclt.SecondTM
 
 def sliced_spectrum(Emin,Emax,dg = 0.001,):
 	"""
-	Gets the array silced with fixed relative width
+	Gets the array sliced with fixed relative width
 
 	Parameters
 	----------
@@ -49,7 +49,7 @@ def sliced_spectrum(Emin,Emax,dg = 0.001,):
 
 def make_beam_sliced(bm,dg=0.002,div_chirp=None):
 	"""
-	Makes a contineous spectrum beam as a list of slices
+	Makes a continuous spectrum beam as a list of slices
 
 	Parameters
 	----------
@@ -130,7 +130,7 @@ def make_beam(bm):
 def make_beam_contin(bm, div_chirp=None):
 	"""
 	Makes a beam with Gaussian phase distributions, 
-	exept for energy spread which is flat-top
+	except for energy spread which is flat-top
 
 	Parameters
 	----------
@@ -359,7 +359,7 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
   stop_key=None, method=method):
 
 	"""
-	Alignes the slices of the spectrally sliced beam at the end of 
+	Aligns the slices of the spectrally sliced beam at the end of 
 	the transport simulation.
 
 	Parameters
