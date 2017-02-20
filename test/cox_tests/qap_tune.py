@@ -94,7 +94,7 @@ def plot_beam(v,beam,plot_XY=False,**imshowargs):
 	sy_fwhm = y[hat_ind[-1]] - y[hat_ind[0]]
 
 	h,x,y = np.histogram2d(ee,rr,bins=400, \
-	  range=[[20,250],[0,3]])
+	  range=[[20,250],[0,0.15]])
 	h = medfilt2d(np.abs(h),5)
 	pl = ax2.imshow(h.T,\
 	  aspect='auto',extent=(x.min(),x.max(),y.min(),y.max()), \
