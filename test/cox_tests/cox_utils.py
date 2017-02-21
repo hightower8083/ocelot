@@ -408,6 +408,13 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		de = 1-p_arrays[i].E/p_arrays[i-1].E
 		s_loc += de*r56[i]
 		ds.append(s_loc)
+
+	ee = np.array([p_array.E for p_array in p_arrays])
+	ee_centr = 0.5*(ee.max()+ee.min())
+	indx_centr = (ee_centr-ee>0).sum()
+
+	ds = np.array(ds)
+	ds -= ds[indx_centr]
 	for i in range(len(p_arrays)):
 		p_arrays[i].s += ds[i]
 	return p_arrays
