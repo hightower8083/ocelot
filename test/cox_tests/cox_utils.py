@@ -171,8 +171,9 @@ def make_beam_contin(bm, div_chirp=None):
 		px =  bm['Ox']*pz0*np.random.randn(bm['Np'])
 		py =  bm['Oy']*pz0*np.random.randn(bm['Np'])
 		
-		parts0[1] = px/pz
-		parts0[3] = py/pz
+		parts0[1] = bm['Ox']*np.random.randn(bm['Np'])*(pz0/pz)**1.4
+		parts0[3] = bm['Oy']*np.random.randn(bm['Np'])*(pz0/pz)**1.4
+
 	else:
 		parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
 		parts0[3] = bm['Oy']*np.random.randn(bm['Np'])

@@ -14,8 +14,8 @@ Drifts['LPWA-QAP1'] = 0.04685
 Drifts['QAP1-QAP2'] = 0.10295
 Drifts['QAP2-QAP3'] = 0.09895
 
-Drifts['QAP3-IMG1'] = 0.52085		##
-Drifts['IMG1-DIP1'] = 0.5725		## correct
+Drifts['QAP3-IMG1'] = 0.26085		##
+Drifts['IMG1-DIP1'] = 0.8325		## correct
 
 Drifts['DIP1-DIP2'] = 0.2
 Drifts['DIP2-IMG2'] = 0.275
