@@ -13,7 +13,7 @@ method.global_method = oclt.SecondTM
 
 def get_envs(QAP1=1., QAP2=1., QAP3=1., \
   SRC=Drifts['LPWA-QAP1']*1e3,TARG=Drifts['QAP3-IMG1']*1e2):
-	energies = np.r_[0.02:0.21:300j]
+	energies = np.r_[0.03:0.19:500j]
 	mags = []
 
 	for BeamEnergy in energies:
@@ -44,16 +44,19 @@ def get_envs(QAP1=1., QAP2=1., QAP3=1., \
 	plt.legend(('$\sigma_x$','$\sigma_z$','$\sqrt{\sigma_x\sigma_z}$'),loc=1)
 	plt.ylabel('Beam sizes (mm)')
 	plt.xlabel('Electron energy (MeV)')
-	plt.ylim(0,8);
+	plt.ylim(0,8.);
 
-def plot_beam(v,beam,plot_XY=False,**imshowargs):
+def plot_beam(v,beam,plot_XY=False,plot_spect=True,**imshowargs):
 	p_arrays_init = cox.make_beam_sliced(beam, \
 	  div_chirp=0.5*(beam['E'][0]+beam['E'][1]))
 
-	if plot_XY:
-		fig,((ax1,ax2),(ax3,ax4)) = plt.subplots(2,2,figsize=(10,8))
-	else:
+	if plot_spect:
 		fig, (ax1,ax2) = plt.subplots(1,2,figsize=(10,4))
+	else:
+		fig, ax1 = plt.subplots(1,1,figsize=(5,5))
+
+	if plot_XY:
+		fig2,(ax3,ax4) = plt.subplots(1,2,figsize=(10,4))
 
 	p_arrays = oclt.deepcopy(p_arrays_init)
 
@@ -78,13 +81,16 @@ def plot_beam(v,beam,plot_XY=False,**imshowargs):
 	ee = np.hstack(([(p_array.p()+1)*p_array.E*1e3 for p_array in p_arrays]))
 	rr = np.sqrt(xx**2+yy**2)
 
-	h,x,y = np.histogram2d(xx,yy,bins=600,range=[[-0.5,0.5],[-0.5,0.5]])
+	h,x,y = np.histogram2d(xx,yy,bins=800,range=[[-0.1,0.1],[-0.1,0.1]])
 	h = medfilt2d(np.abs(h),5)
 	pl = ax1.imshow(h.T,aspect='auto', \
 	  extent=(x.min(),x.max(),y.min(),y.max()),origin='lower',**imshowargs)
 
-	hx = h[:,299]
-	hy = h[299,:]
+	ax1.set_xlabel('X (mm)')
+	ax1.set_ylabel('Y (mm)')
+
+	hx = h[:,h.shape[1]/2-1:h.shape[1]/2+2].mean(-1)
+	hy = h[h.shape[0]/2-1:h.shape[0]/2+2,:].mean(0)
 
 	hx -= hx.min()
 	hat_ind = np.nonzero(hx>0.5*hx.max())[0]
@@ -93,17 +99,15 @@ def plot_beam(v,beam,plot_XY=False,**imshowargs):
 	hat_ind = np.nonzero(hy>0.5*hy.max())[0]
 	sy_fwhm = y[hat_ind[-1]] - y[hat_ind[0]]
 
-	h,x,y = np.histogram2d(ee,rr,bins=400, \
-	  range=[[20,250],[0,0.15]])
-	h = medfilt2d(np.abs(h),5)
-	pl = ax2.imshow(h.T,\
-	  aspect='auto',extent=(x.min(),x.max(),y.min(),y.max()), \
-	  origin='lower',**imshowargs)
-
-	ax1.set_xlabel('X (mm)')
-	ax1.set_ylabel('Y (mm)')
-	ax2.set_xlabel('Electron energy (MeV)')
-	ax2.set_ylabel('Radius (mm)')
+	if plot_spect:
+		h,x,y = np.histogram2d(ee,rr,bins=400, \
+		  range=[[20,250],[0,0.15]])
+		h = medfilt2d(np.abs(h),5)
+		pl = ax2.imshow(h.T,\
+		  aspect='auto',extent=(x.min(),x.max(),y.min(),y.max()), \
+		  origin='lower',**imshowargs)
+		ax2.set_xlabel('Electron energy (MeV)')
+		ax2.set_ylabel('Radius (mm)')
 
 	if plot_XY:
 		h,x,y = np.histogram2d(ee,xx,bins=400, \
@@ -146,11 +150,11 @@ def plot_beam(v,beam,plot_XY=False,**imshowargs):
 	  .format(e_cent,se*100) )
 
 qap_widgt = interactive(get_envs, \
-  QAP1=(0.87,1.6,0.01), \
-  QAP2=(0.88,1.6,0.01), \
-  QAP3=(0.96,1.7,0.01), \
+  QAP1=(0.87,1.6,0.005), \
+  QAP2=(0.88,1.6,0.005), \
+  QAP3=(0.96,1.7,0.005), \
   SRC=(0,100,2), \
-  TARG=(0,100,2.), \
+  TARG=(0,200,2.), \
 )
 
 qap_widgt.children[3].description = 'SRC (mm)'

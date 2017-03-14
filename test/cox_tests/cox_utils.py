@@ -93,7 +93,7 @@ def make_beam(bm):
 	Parameters
 	----------
 	bm : dictionary
-	  beam input parameters (in SI units): 
+	  beam input parameters (in SI units):
 	    Np -- full number of particles
 	    Lz, Rx, Ry -- spatial dimensions of the beam
 	    dE, Ox, Oy -- normalized momenta dispersions
@@ -106,11 +106,11 @@ def make_beam(bm):
 
 	"""
 
-	parts0 = np.zeros((6,bm['Np']))
 	if 'X0' not in bm: bm['X0'] = 0.
 	if 'Y0' not in bm: bm['Y0'] = 0.
 	if 'Z0' not in bm: bm['Z0'] = 0.
 
+	parts0    = np.zeros((6,bm['Np']))
 	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])+bm['X0']
 	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])+bm['Y0']
 	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])+bm['Z0']
@@ -579,8 +579,9 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
 	beam.Data['coords'][0] -= (beam.Data['coords'][0]*beam.Data['weights']\
 	  ).sum()/(beam.Data['weights']).sum()
 	beam.Data['coords_halfstep'] = beam.Data['coords'].copy()
-	if keep_orig is False: 
+	if keep_orig is False:
 		del p_arrays
+
 	return  beam
 
 def print_latt_chars(lat, BeamEnergy):
