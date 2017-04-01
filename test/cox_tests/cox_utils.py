@@ -10,7 +10,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import ocelot as oclt
-from cox_configs import *
+#from cox_configs import *
+from cox_configs_exprU18 import *
 from scipy.constants import m_e,c,e
 
 mc2_GeV = m_e*c**2/e*1e-9
@@ -523,10 +524,12 @@ def damp_particles(p_array, Rx,Ry):
 	indx = np.nonzero((np.abs(p_array.x())<Rx0)*(np.abs(p_array.y())<Ry0))[0]
 	p_array.particles = \
 	  p_array.particles.reshape((p_array.size(),6))[indx,:].flatten()
+	p_array.q_array = p_array.q_array[indx]
 	Np = p_array.size()
 	return p_array, Np
 
-def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
+def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True,\
+  monochrom=None, select_parts = None):
 	"""
 	Exports the list of ParticleArrays from OCELOT to CHIMERA
 
@@ -546,13 +549,13 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
 	"""
 
 	Np = np.sum([p_array.size() for p_array in p_arrays])
-	g0 = p_array.E/mc2_GeV
+#	g0 = p_array.E/mc2_GeV
 
-	xx = np.hstack(([-p_array.tau()/lam0 for p_array in p_arrays]))
+	xx = np.hstack(([(p_array.s-p_array.tau())/lam0 for p_array in p_arrays]))
 	yy = np.hstack(([p_array.y()/lam0 for p_array in p_arrays]))
 	zz = np.hstack(([p_array.x()/lam0 for p_array in p_arrays]))
 
-	gg = np.hstack(([(p_array.p()+1)*g0 for p_array in p_arrays]))
+	gg = np.hstack(([(p_array.p()+1)*p_array.E/mc2_GeV for p_array in p_arrays]))
 	oy = np.hstack(([p_array.py() for p_array in p_arrays]))
 	oz = np.hstack(([p_array.px() for p_array in p_arrays]))
 
@@ -561,6 +564,33 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
 	px = np.sqrt( (gg**2-1.)/(1+oy**2+oz**2) )
 	py = px*oy
 	pz = px*oz
+	qq = -qq/(beam.weight2pC*lam0*1e6)
+
+	if monochrom != None:
+		emin,emax = monochrom
+		indx = np.nonzero( (gg*mc2_GeV<emax)*(gg*mc2_GeV>emin)  )[0]
+		xx = xx[indx]
+		yy = yy[indx]
+		zz = zz[indx]
+		px = px[indx]
+		py = py[indx]
+		pz = pz[indx]
+		qq = qq[indx]
+		Np = indx.shape[0]
+
+	if select_parts != None:
+		indx = np.arange(xx.shape[0])
+		np.random.shuffle(indx)
+		indx = indx[:select_parts]
+		xx = xx[indx]
+		yy = yy[indx]
+		zz = zz[indx]
+		px = px[indx]
+		py = py[indx]
+		pz = pz[indx]
+		qq = qq[indx]*Np*1.0/select_parts
+		Np = indx.shape[0]
+
 	gg, oy, oz = None, None, None
 
 	beam.Data['coords'] = np.zeros((3,Np))
@@ -575,7 +605,8 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True):
 	beam.Data['momenta'][1] = py
 	beam.Data['momenta'][2] = pz
 
-	beam.Data['weights'][:] = -qq/(beam.weight2pC*lam0*1e6)
+	beam.Data['weights'][:] = qq
+
 	beam.Data['coords'][0] -= (beam.Data['coords'][0]*beam.Data['weights']\
 	  ).sum()/(beam.Data['weights']).sum()
 	beam.Data['coords_halfstep'] = beam.Data['coords'].copy()

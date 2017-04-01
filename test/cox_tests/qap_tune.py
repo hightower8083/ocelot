@@ -7,6 +7,7 @@ from ocelot.test.cox_tests.cox_configs import *
 from ocelot.test.cox_tests import cox_utils as cox
 
 from ipywidgets import interactive
+from ipywidgets import interact
 
 method = oclt.MethodTM()
 method.global_method = oclt.SecondTM
@@ -148,6 +149,9 @@ def plot_beam(v,beam,plot_XY=False,plot_spect=True,**imshowargs):
 	  .format(ox,oy) \
 	  + " [mrad]\ne={0:g} [MeV], de={1:g}%"\
 	  .format(e_cent,se*100) )
+
+	out_dat = np.vstack((xx,yy,zz,px,py,ee  ))
+	return out_dat
 
 qap_widgt = interactive(get_envs, \
   QAP1=(0.87,1.6,0.005), \
