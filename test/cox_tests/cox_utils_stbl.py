@@ -224,7 +224,7 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	Latt = []
 	Ecorr = BeamEnergy_ref/BeamEnergy
 
-	for key in Drifts.keys():
+	for key in Drifts.keys(): 
 		LattObjs[key] = oclt.Drift(l=Drifts[key])
 
 	for key in QuadLengths.keys():
@@ -248,7 +248,7 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 		LattObjs[key] = oclt.RBend( \
 		  l=DipLengths[key], angle=DipAngles[key]*Ecorr)
 
-	for key in  ['IMG1','IMG2','IMG4','IMG5',]:
+	for key in  ['IMG1','IMG2','IMG4','IMG5',]: 
 		LattObjs[key] = oclt.Marker()
 
 	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
@@ -260,7 +260,7 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
   QuadGradients=QuadGradients,DipLengths=DipLengths,\
   DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
+  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,\
   stop_key=None, method=method, Nit = 1,output = None, damping = None):
 
 	"""
@@ -301,28 +301,23 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
 	  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,)
 
-	if stop_key!=None and start_key!=None:
+	if stop_key==None:
 		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-		  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-	elif stop_key!=None and start_key==None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,stop=latt_elmts[stop_key])
-	elif stop_key==None and start_key!=None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,start=latt_elmts[start_key])
+		  method=method)
 	else:
 		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method)
+		  method=method,stop=latt_elmts[stop_key])
 	dz = lat.totalLen/Nit
 	if type(p_arrays)!=list: p_arrays = [p_arrays,]
 
 	outputs = {}
-	if output!=None:
-		for key in output: outputs[key] = np.zeros(Nit+1)
 	if damping!=None:
 		sys.stdout.write('Particle losses activated \n');sys.stdout.flush()
 		outputs['staying'] = np.zeros(Nit+1)
 		to_pop = []
+	if output!=None:
+		for key in output: outputs[key] = np.zeros(Nit+1)
+		outputs['s'] = dz*np.arange(Nit+1)
 
 	for i in range(len(p_arrays)):
 		latt_elmts = make_line(\
@@ -331,22 +326,8 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
 		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
 
-#		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-#		  method=method,stop=latt_elmts[stop_key])
-
-		if stop_key!=None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
-		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
-		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method)
-
+		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+		  method=method,stop=latt_elmts[stop_key])
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
 		for j in range(Nit+1):
@@ -359,7 +340,7 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 					to_pop.append(i)
 					break
 			if output!=None:
-				for key in output:
+				for key in output: 
 					outputs[key][j] += beam_diags(p_arrays[i],key)
 
 	if damping!=None:
@@ -367,7 +348,7 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		for i in to_pop:
 			p_arrays.pop(i-poped)
 			poped += 1
-		if poped>0:
+		if poped>0: 
 			sys.stdout.write('\n'+str(poped)+' slices are lost')
 			sys.stdout.flush()
 
@@ -376,7 +357,7 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
   QuadGradients=QuadGradients,DipLengths=DipLengths,\
   DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
+  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,\
   stop_key=None, method=method):
 
 	"""
@@ -404,13 +385,9 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	"""
 
+	r56 = []
 	sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices')
 	sys.stdout.flush()
-
-	r16 = []
-	r36 = []
-	r56 = []
-
 	for i in range(len(p_arrays)):
 		latt_elmts = make_line(\
 		  Drifts = Drifts, QuadLengths=QuadLengths,\
@@ -418,80 +395,31 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
 		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
 
-		if stop_key!=None and start_key!=None:
+		if stop_key==None:
 			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
-		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
-		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
 			  method=method)
-
+		else:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+			  method=method,stop=latt_elmts[stop_key])
 		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
-		r16.append(lat.R[0,5])
-		r36.append(lat.R[2,5])
 		r56.append(lat.R[4,5])
 
-	dx = [0,]
-	dy = [0,]
 	ds = [0,]
-	x_loc = 0.0
-	y_loc = 0.0
 	s_loc = 0.0
-
 	for i in range(1,len(p_arrays)):
 		de = 1-p_arrays[i].E/p_arrays[i-1].E
-		x_loc += de*r16[i]
-		y_loc += de*r36[i]
 		s_loc += de*r56[i]
-		dx.append(x_loc)
-		dy.append(y_loc)
 		ds.append(s_loc)
 
 	ee = np.array([p_array.E for p_array in p_arrays])
-	ee_centr = BeamEnergy_ref
-#	ee_centr = 0.5*(ee.max()+ee.min())
+	ee_centr = 0.5*(ee.max()+ee.min())
 	indx_centr = (ee_centr-ee>0).sum()
 
-	dx = np.array(dx)
-	dy = np.array(dy)
 	ds = np.array(ds)
-	dx -= dx[indx_centr]
-	dy -= dy[indx_centr]
 	ds -= ds[indx_centr]
 	for i in range(len(p_arrays)):
-		p_arrays[i].particles[0::6] -= dx[i]
-		p_arrays[i].particles[2::6] -= dy[i]
-#		p_arrays[i].particles[4::6] -= ds[i]
 		p_arrays[i].s += ds[i]
 	return p_arrays
-
-def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
-	to_pop = []
-	for i in range(len(p_arrays)):
-		if comp=='x':
-			coord = p_arrays[i].x()
-		elif comp=='y':
-			coord = p_arrays[i].y()
-		Num_loc = coord.shape[0]
-		indx = np.nonzero(np.abs(coord-cntr)<=width)[0]
-		if indx.shape[0]==0:
-			to_pop.append(i)
-		else:
-			p_arrays[i].particles = p_arrays[i].particles.reshape((Num_loc,6))[indx,:].flatten()
-			p_arrays[i].q_array = p_arrays[i].q_array[indx]
-
-	poped = 0
-	for i in to_pop:
-		p_arrays.pop(i-poped)
-		poped += 1
-
-#	for i in to_pop[::-1]:
-#		p_arrays.pop(i)
 
 def beam_diags(p_array, key):
 	"""
@@ -520,7 +448,6 @@ def beam_diags(p_array, key):
 	if key == 'x':  val = p_array.x().sum()
 	if key == 'y':  val = p_array.y().sum()
 	if key == 'z':  val = -p_array.tau().sum()
-	if key == 's':  val = p_array.s*p_array.size()
 
 	if key == 'x2': val = (p_array.x()**2).sum()
 	if key == 'y2': val = (p_array.y()**2).sum()
@@ -596,9 +523,9 @@ def damp_particles(p_array, Rx,Ry):
 	Rx0, Ry0 = Rx(s0), Ry(s0)
 	indx = np.nonzero((np.abs(p_array.x())<Rx0)*(np.abs(p_array.y())<Ry0))[0]
 	p_array.particles = \
-	  p_array.particles.reshape((np.int(p_array.size()),6))[indx,:].flatten()
+	  p_array.particles.reshape((p_array.size(),6))[indx,:].flatten()
 	p_array.q_array = p_array.q_array[indx]
-	Np = np.int(p_array.size())
+	Np = p_array.size()
 	return p_array, Np
 
 def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True,\
@@ -621,7 +548,7 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True,\
 		CHIMERA species obejct populated with particles
 	"""
 
-	Np = np.int(np.sum([p_array.size() for p_array in p_arrays]))
+	Np = np.sum([p_array.size() for p_array in p_arrays])
 #	g0 = p_array.E/mc2_GeV
 
 	xx = np.hstack(([(p_array.s-p_array.tau())/lam0 for p_array in p_arrays]))

@@ -1,0 +1,70 @@
+Drifts = {}
+QuadLengths = {}
+QuadGradients = {}
+DipLengths = {}
+DipAngles = {}
+UndulConfigs = {}
+
+cell_keys = ['LPWA-QAP1','QAP1','QAP1-QAP2','QAP2','QAP2-QAP3','QAP3','QAP3-IMG1','IMG1',\
+  'IMG1-DIP1','DIP1','DIP1-DIP2','DIP2','DIP2-IMG2','IMG2','IMG2-DIP3','DIP3','DIP3-DIP4','DIP4',\
+  'DIP4-QEM1','QEM1','QEM1-QEM2','QEM2','QEM2-IMG4','IMG4','IMG4-QEM3','QEM3','QEM3-QEM4','QEM4',\
+  'QEM4-UNDL','UNDL1','UNDL2','UNDL-IMG5','IMG5']
+
+Drifts['LPWA-QAP1'] = 0.04685
+Drifts['QAP1-QAP2'] = 0.10295
+Drifts['QAP2-QAP3'] = 0.09895
+Drifts['QAP3-IMG1'] = 0.25085
+Drifts['IMG1-DIP1'] = 0.533 # or add 0.04
+Drifts['DIP1-DIP2'] = 0.2
+Drifts['DIP2-IMG2'] = 0.275
+Drifts['IMG2-DIP3'] = 0.275
+Drifts['DIP3-DIP4'] = 0.2
+Drifts['DIP4-QEM1'] = 0.32035
+Drifts['QEM1-QEM2'] = 0.3867
+Drifts['QEM2-IMG4'] = 0.14335
+Drifts['IMG4-QEM3'] = 0.14335
+Drifts['QEM3-QEM4'] = 0.3367
+Drifts['QEM4-UNDL'] = 0.29135
+Drifts['UNDL-IMG5'] = 0.573
+
+QuadLengths['QAP1'] = 0.047
+QuadLengths['QAP2'] = 0.0511
+QuadLengths['QAP3'] = 0.0323
+QuadLengths['QEM1'] = 0.2133
+QuadLengths['QEM2'] = 0.2133
+QuadLengths['QEM3'] = 0.2133
+QuadLengths['QEM4'] = 0.2133
+
+QuadGradients['QAP1'] = 175.0254
+QuadGradients['QAP2'] = -172.3988
+QuadGradients['QAP3'] = 151.8898
+
+QuadGradients['QEM1'] = -4.140911
+QuadGradients['QEM2'] = 6.790935
+QuadGradients['QEM3'] = -9.822077
+QuadGradients['QEM4'] = 3.647252
+
+DipLengths['DIP1'] = 0.2
+DipLengths['DIP2'] = 0.2
+DipLengths['DIP3'] = 0.2
+DipLengths['DIP4'] = 0.2
+
+DipAngles['DIP1'] = 1
+DipAngles['DIP2'] = -1
+DipAngles['DIP3'] = -1
+DipAngles['DIP4'] = 1
+
+UndulConfigs['Period'] = 0.018
+UndulConfigs['Strength'] = 1.62
+UndulConfigs['NumPeriods'] = 54
+
+BeamEnergy_ref = 0.176
+
+latt_par_string = """
+###############################
+R_11 = {0:.3g}, R_33 = {1:.3g},
+R_56 = {2:.3g} mm,
+R_226 = {3:.3g}, R_446 = {4:.3g},
+R_126 = {5:.3g}, R_346 = {6:.3g}
+################################
+"""

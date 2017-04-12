@@ -13,8 +13,10 @@ method = oclt.MethodTM()
 method.global_method = oclt.SecondTM
 
 def get_envs(QAP1=1., QAP2=1., QAP3=1., \
-  SRC=Drifts['LPWA-QAP1']*1e3,TARG=Drifts['QAP3-IMG1']*1e2):
-	energies = np.r_[0.03:0.19:500j]
+             SRC=Drifts['LPWA-QAP1']*1e3,TARG=Drifts['QAP3-IMG1']*1e2, ):
+
+	emin,emax = 0.04,0.25
+	energies = np.r_[emin:emax:300j]
 	mags = []
 
 	for BeamEnergy in energies:
@@ -45,7 +47,7 @@ def get_envs(QAP1=1., QAP2=1., QAP3=1., \
 	plt.legend(('$\sigma_x$','$\sigma_z$','$\sqrt{\sigma_x\sigma_z}$'),loc=1)
 	plt.ylabel('Beam sizes (mm)')
 	plt.xlabel('Electron energy (MeV)')
-	plt.ylim(0,8.);
+	plt.ylim(0,4.);
 
 def plot_beam(v,beam,plot_XY=False,plot_spect=True,**imshowargs):
 	p_arrays_init = cox.make_beam_sliced(beam, \
