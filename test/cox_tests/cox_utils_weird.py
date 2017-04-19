@@ -1,6 +1,6 @@
 """
-This module contains the functions needed for OCELOT to model 
-the COXINEL experiment. In particular it deals with the broad-spectrum 
+This module contains the functions needed for OCELOT to model
+the COXINEL experiment. In particular it deals with the broad-spectrum
 beam transport.
 
 by I.A. Andriyash
@@ -199,10 +199,11 @@ def make_beam_contin(bm, div_chirp=None):
 
 	return p_array
 
-def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
+def make_cox_line(BeamEnergy=BeamEnergy_ref, \
+  Drifts = Drifts,QuadLengths=QuadLengths,\
   QuadGradients=QuadGradients,DipLengths=DipLengths,\
   DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-	BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref):
+  BeamEnergy_ref=BeamEnergy_ref):
 
 	"""
 	Makes a COXINEL-type transport line with drifts, dipoles,
@@ -216,7 +217,7 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	BeamEnergy: float
 	  energy of the beam (in GeV)
 	BeamEnergy_ref: float
-	  reference energy of the beam for which lattice gradients 
+	  reference energy of the beam for which lattice gradients
 	  and angles are defined (in GeV)
 
 	Returns
@@ -269,12 +270,31 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
 	return LattObjs
 
-def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
-  QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
-  stop_key=None, method=method, Nit = 1,output = None,\
-  verbose=False):
+def make_latts(p_arrays, line_maker, start_key = None, stop_key = None):
+
+	latts = []
+	for i in range(len(p_arrays)):
+		latt_elmts = line_maker(p_arrays[i].E)
+
+		if stop_key!=None and start_key!=None:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
+			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
+		elif stop_key!=None and start_key==None:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
+			  method=method,stop=latt_elmts[stop_key])
+		elif stop_key==None and start_key!=None:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
+			  method=method,start=latt_elmts[start_key])
+		else:
+			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
+			  method=method)
+
+		latts.append(lat)
+	return latts,latt_elmts
+
+
+def make_shot(p_arrays, latts,start_indx=None, stop_indx=None, method=method,\
+              Nit = 1,output = None, verbose=False):
 
 	"""
 	Performs the transport simulation through a COXINEL-type transport line.
@@ -282,11 +302,11 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	Parameters
 	----------
 	p_arrays: list or single oclt.ParticleArray object
-	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
-	 defined in make_line
-	stop_key : str
-	  key-name of lattice element at which to stop the transport
+	latts: list of lattices for each p_array energy
+	start_indx : integer
+	  index of the lattice element at which to stop the transport
+	stop_indx : integer
+	  index of the lattice element at which to stop the transport
 	method : oclt.methodTM
 	  transport method (works with first or second orders)
 	Nit : int
@@ -305,51 +325,18 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	"""
 
-	latt_elmts = make_line(\
-	  Drifts = Drifts, QuadLengths=QuadLengths,\
-	  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-	  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
-	  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,)
-
-	if stop_key!=None and start_key!=None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-		  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-	elif stop_key!=None and start_key==None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,stop=latt_elmts[stop_key])
-	elif stop_key==None and start_key!=None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,start=latt_elmts[start_key])
-	else:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method)
-	dz = lat.totalLen/Nit
 	if type(p_arrays)!=list: p_arrays = [p_arrays,]
+	if type(latts)!=list: latts = [latts,]
+
+	dz = latts[0].totalLen/Nit
 
 	outputs = {}
 	if output!=None:
 		for key in output: outputs[key] = np.zeros(Nit+1)
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(\
-		  Drifts = Drifts, QuadLengths=QuadLengths,\
-		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
-
-		if stop_key!=None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
-		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
-		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method)
-
+		lat = oclt.deepcopy(latts[i])
+#		lat.sequence = lat.sequence[start_indx:stop_indx]
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
 		for j in range(Nit+1):
@@ -361,22 +348,17 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	return p_arrays, outputs
 
-def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
-  QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
+def aligh_slices(p_arrays, start_key=None,\
   stop_key=None, method=method,verbose=False):
 
 	"""
-	Aligns the slices of the spectrally sliced beam at the end of 
+
+	Aligns the slices of the spectrally sliced beam at the end of
 	the transport simulation.
 
 	Parameters
 	----------
 	p_arrays: list of oclt.ParticleArray objects
-	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
-	 defined in make_line and make_shot
 	stop_key : str
 	  key-name of lattice element at which to stop the transport
 	method : oclt.methodTM
@@ -392,6 +374,11 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	"""
 
+	if type(p_arrays)!=list: p_arrays = [p_arrays,]
+	if type(latts)!=list: latts = [latts,]
+	for lat in latts:
+		lat.sequence = lat.sequence[start_indx:stop_indx]
+
 	if verbose:
 		sys.stdout.write('\nAligning '+str(len(p_arrays))+' slices')
 		sys.stdout.flush()
@@ -401,25 +388,7 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	r56 = []
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(\
-		  Drifts = Drifts, QuadLengths=QuadLengths,\
-		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
-
-		if stop_key!=None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
-		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
-		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
-		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method)
-
+		lat = latts[i]
 		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
 		r16.append(lat.R[0,5])
 		r36.append(lat.R[2,5])
@@ -441,9 +410,9 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		dy.append(y_loc)
 		ds.append(s_loc)
 
-	ee = np.array([p_array.E for p_array in p_arrays])
 #	ee_centr = 0.5*(ee.max()+ee.min())
 	ee_centr = BeamEnergy_ref
+	ee = np.array([p_array.E for p_array in p_arrays])
 	indx_centr = (ee_centr-ee>0).sum()
 
 	dx = np.array(dx)
@@ -453,10 +422,13 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	dy -= dy[indx_centr]
 	ds -= ds[indx_centr]
 	for i in range(len(p_arrays)):
-		p_arrays[i].x_c = -dx[i]
-		p_arrays[i].y_c = -dy[i]
-		p_arrays[i].z_c = ds[i]
-
+		p_array = p_arrays[i]
+		p_array.x_c = -dx[i]
+		p_array.y_c = -dy[i]
+		p_array.z_c = ds[i]
+#		p_arrays[i].particles[0::6] -= dx[i]
+#		p_arrays[i].particles[2::6] -= dy[i]
+#		p_arrays[i].s += ds[i]
 	return p_arrays
 
 def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
@@ -488,9 +460,11 @@ def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
 			  .reshape((Num_loc,6))[indx,:].flatten()
 			p_arrays[i].q_array = p_arrays[i].q_array[indx]
 
-	for i in to_pop[::-1]: p_arrays.pop(i)
-	return p_arrays
-
+	poped = 0
+	for i in to_pop:
+		p_arrays.pop(i-poped)
+		poped += 1
+#	for i in to_pop[::-1]: p_arrays.pop(i)
 
 def beam_diags(p_array, key):
 	"""

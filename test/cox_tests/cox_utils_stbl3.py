@@ -127,7 +127,7 @@ def make_beam(bm):
 
 	p_array.x_c = 0.0
 	p_array.y_c = 0.0
-	p_array.z_c = 0.0
+	p_array.s_c = 0.0
 
 	if 'Q' in bm:
 		p_array.q_array = (bm['Q']/bm['Np'])*np.ones(bm['Np'])
@@ -195,7 +195,7 @@ def make_beam_contin(bm, div_chirp=None):
 
 	p_array.x_c = 0.0
 	p_array.y_c = 0.0
-	p_array.z_c = 0.0
+	p_array.s_c = 0.0
 
 	return p_array
 
@@ -273,7 +273,7 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
   QuadGradients=QuadGradients,DipLengths=DipLengths,\
   DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
   BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
-  stop_key=None, method=method, Nit = 1,output = None,\
+  stop_key=None, method=method, Nit = 1,output = None, damping = None,\
   verbose=False):
 
 	"""
@@ -293,6 +293,9 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	  number of steps to perform (for output and damping resolutions)
 	output : dictionary or None
 	  outputs to perform as defined in beam_diags
+	damping: list, tuple or None
+	  If not None the particle losses in the limitied width pipe is 
+	  performed as defined in damp_particles
 
 	Returns
 	-------
@@ -329,6 +332,12 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	outputs = {}
 	if output!=None:
 		for key in output: outputs[key] = np.zeros(Nit+1)
+	if damping!=None:
+		if verbose:
+			sys.stdout.write('Particle losses activated \n')
+			sys.stdout.flush()
+		outputs['staying'] = np.zeros(Nit+1)
+		to_pop = []
 
 	for i in range(len(p_arrays)):
 		latt_elmts = make_line(\
@@ -355,9 +364,25 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		for j in range(Nit+1):
 			if verbose: sys.stdout.write(sss+'step '+str(j+1)+' of '+str(Nit))
 			oclt.tracking_step(lat, p_arrays[i], dz,navi)
+			if damping!=None:
+				p_arrays[i], np_loc = damp_particles(p_arrays[i],*damping)
+				outputs['staying'][j] += np_loc
+				if np_loc<1:
+					to_pop.append(i)
+					break
 			if output!=None:
 				for key in output:
 					outputs[key][j] += beam_diags(p_arrays[i],key)
+
+	if damping!=None:
+		poped = 0
+		for i in to_pop:
+			p_arrays.pop(i-poped)
+			poped += 1
+		if poped>0:
+			if verbose:
+				sys.stdout.write('\n'+str(poped)+' slices are lost')
+				sys.stdout.flush()
 
 	return p_arrays, outputs
 
@@ -442,8 +467,8 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		ds.append(s_loc)
 
 	ee = np.array([p_array.E for p_array in p_arrays])
-#	ee_centr = 0.5*(ee.max()+ee.min())
 	ee_centr = BeamEnergy_ref
+#	ee_centr = 0.5*(ee.max()+ee.min())
 	indx_centr = (ee_centr-ee>0).sum()
 
 	dx = np.array(dx)
@@ -453,44 +478,36 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	dy -= dy[indx_centr]
 	ds -= ds[indx_centr]
 	for i in range(len(p_arrays)):
-		p_arrays[i].x_c = -dx[i]
-		p_arrays[i].y_c = -dy[i]
-		p_arrays[i].z_c = ds[i]
-
+		p_array.x_c = dx[i]
+		p_array.y_c = dy[i]
+		p_array.s_c = ds[i]
+#		p_arrays[i].particles[0::6] -= dx[i]
+#		p_arrays[i].particles[2::6] -= dy[i]
+#		p_arrays[i].s += ds[i]
 	return p_arrays
 
 def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
 	to_pop = []
 	for i in range(len(p_arrays)):
 		if comp=='x':
-			x = p_arrays[i].x() + p_arrays[i].x_c
-			coord = (x-cntr)/width
+			coord = p_arrays[i].x()
 		elif comp=='y':
-			y = p_arrays[i].y() + p_arrays[i].y_c
-			coord = (y-cntr)/width
-		elif comp=='rectangular':
-			x = p_arrays[i].x() + p_arrays[i].x_c
-			y = p_arrays[i].y() + p_arrays[i].y_c
-			coord = (x-cntr[0])**x + (y-cntr[1])**2
-		elif comp=='ellipse':
-			x = p_arrays[i].x() + p_arrays[i].x_c
-			y = p_arrays[i].y() + p_arrays[i].y_c
-			coord = np.sqrt((x-cntr[0])**2/width[0]**2 \
-			  + (y-cntr[1])**2/width[1]**2)
-
+			coord = p_arrays[i].y()
 		Num_loc = coord.shape[0]
-		indx = np.nonzero(np.abs(coord)<=1)[0]
-
+		indx = np.nonzero(np.abs(coord-cntr)<=width)[0]
 		if indx.shape[0]==0:
 			to_pop.append(i)
 		else:
-			p_arrays[i].particles = p_arrays[i].particles \
-			  .reshape((Num_loc,6))[indx,:].flatten()
+			p_arrays[i].particles = p_arrays[i].particles.reshape((Num_loc,6))[indx,:].flatten()
 			p_arrays[i].q_array = p_arrays[i].q_array[indx]
 
-	for i in to_pop[::-1]: p_arrays.pop(i)
-	return p_arrays
+	poped = 0
+	for i in to_pop:
+		p_arrays.pop(i-poped)
+		poped += 1
 
+#	for i in to_pop[::-1]:
+#		p_arrays.pop(i)
 
 def beam_diags(p_array, key):
 	"""

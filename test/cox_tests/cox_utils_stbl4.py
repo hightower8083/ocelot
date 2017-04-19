@@ -442,8 +442,8 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		ds.append(s_loc)
 
 	ee = np.array([p_array.E for p_array in p_arrays])
-#	ee_centr = 0.5*(ee.max()+ee.min())
 	ee_centr = BeamEnergy_ref
+#	ee_centr = 0.5*(ee.max()+ee.min())
 	indx_centr = (ee_centr-ee>0).sum()
 
 	dx = np.array(dx)
@@ -453,9 +453,9 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	dy -= dy[indx_centr]
 	ds -= ds[indx_centr]
 	for i in range(len(p_arrays)):
-		p_arrays[i].x_c = -dx[i]
-		p_arrays[i].y_c = -dy[i]
-		p_arrays[i].z_c = ds[i]
+		p_array.x_c = -dx[i]
+		p_array.y_c = -dy[i]
+		p_array.z_c = ds[i]
 
 	return p_arrays
 
