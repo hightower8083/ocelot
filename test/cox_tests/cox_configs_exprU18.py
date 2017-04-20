@@ -54,8 +54,8 @@ DipAngles['DIP2'] = -1
 DipAngles['DIP3'] = -1
 DipAngles['DIP4'] = 1
 
-UndulConfigs['Period'] = 0.018
-UndulConfigs['Strength'] = 1.62
+UndulConfigs['Period'] = 0.01816
+UndulConfigs['Strength'] = 1.80227173
 UndulConfigs['NumPeriods'] = 54
 
 BeamEnergy_ref = 0.176
