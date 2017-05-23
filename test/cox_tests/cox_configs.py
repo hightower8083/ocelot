@@ -1,3 +1,4 @@
+lattice_elements = {}
 Drifts = {}
 QuadLengths = {}
 QuadGradients = {}
@@ -9,6 +10,7 @@ cell_keys = ['LPWA-QAP1','QAP1','QAP1-QAP2','QAP2','QAP2-QAP3','QAP3','QAP3-IMG1
   'IMG1-DIP1','DIP1','DIP1-DIP2','DIP2','DIP2-IMG2','IMG2','IMG2-DIP3','DIP3','DIP3-DIP4','DIP4',\
   'DIP4-QEM1','QEM1','QEM1-QEM2','QEM2','QEM2-IMG4','IMG4','IMG4-QEM3','QEM3','QEM3-QEM4','QEM4',\
   'QEM4-UNDL','UNDL1','UNDL2','UNDL-IMG5','IMG5']
+
 
 Drifts['LPWA-QAP1'] = 0.04685
 Drifts['QAP1-QAP2'] = 0.10295
@@ -62,6 +64,14 @@ UndulConfigs['Strength'] = 1.7291
 UndulConfigs['NumPeriods'] = 50
 
 BeamEnergy_ref = 0.18
+
+lattice_elements['Drifts'] = Drifts
+lattice_elements['QuadLengths'] = QuadLengths
+lattice_elements['QuadGradients'] = QuadGradients
+lattice_elements['DipLengths'] = DipLengths
+lattice_elements['DipAngles'] = DipAngles
+lattice_elements['UndulConfigs'] = UndulConfigs
+
 
 latt_par_string = """
 ###############################

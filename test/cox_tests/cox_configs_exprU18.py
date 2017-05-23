@@ -1,3 +1,4 @@
+lattice_elements = {}
 Drifts = {}
 QuadLengths = {}
 QuadGradients = {}
@@ -59,6 +60,13 @@ UndulConfigs['Strength'] = 1.80227173
 UndulConfigs['NumPeriods'] = 54
 
 BeamEnergy_ref = 0.176
+
+lattice_elements['Drifts'] = Drifts
+lattice_elements['QuadLengths'] = QuadLengths
+lattice_elements['QuadGradients'] = QuadGradients
+lattice_elements['DipLengths'] = DipLengths
+lattice_elements['DipAngles'] = DipAngles
+lattice_elements['UndulConfigs'] = UndulConfigs
 
 latt_par_string = """
 ###############################

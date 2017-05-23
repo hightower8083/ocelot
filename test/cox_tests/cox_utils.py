@@ -10,16 +10,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import ocelot as oclt
-#from cox_configs import *
-from ocelot.test.cox_tests.cox_configs_exprU18 import *
 from scipy.constants import m_e,c,e
 
 np.set_printoptions(precision=6, suppress=True, linewidth=120)
 
 mc2_GeV = m_e*c**2/e*1e-9
-
 method = oclt.MethodTM()
 method.global_method = oclt.SecondTM
+
+latt_par_string = """
+###############################
+R_11 = {0:.3g}, R_33 = {1:.3g},
+R_56 = {2:.3g} mm,
+R_226 = {3:.3g}, R_446 = {4:.3g},
+R_126 = {5:.3g}, R_346 = {6:.3g}
+################################
+"""
 
 def sliced_spectrum(Emin,Emax,dg = 0.001,):
 	"""
@@ -199,20 +205,17 @@ def make_beam_contin(bm, div_chirp=None):
 
 	return p_array
 
-def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
-  QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-	BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref):
-
+def make_line(lattice_elements, cell_keys, BeamEnergy, BeamEnergy_ref):
 	"""
 	Makes a COXINEL-type transport line with drifts, dipoles,
 	quadrupoles, undulator and few screens
 
 	Parameters
 	----------
-	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs : dictionaries with elements as
-	 defined in cox_configs
+	lattice_elements: dictionary which contains COXINEL elements 
+	  as defined in cox_configs (shoud include Drifts, QuadLengths, 
+	  QuadGradients, DipLengths, DipAngles,UndulConfigs)
+	cell_keys: list with the keys to define the lattice sequence
 	BeamEnergy: float
 	  energy of the beam (in GeV)
 	BeamEnergy_ref: float
@@ -236,45 +239,51 @@ def make_line(Drifts = Drifts,QuadLengths=QuadLengths,\
 	Latt = []
 	Ecorr = BeamEnergy_ref/BeamEnergy
 
-	for key in Drifts.keys():
-		LattObjs[key] = oclt.Drift(l=Drifts[key])
+	for key in lattice_elements['Drifts'].keys():
+		LattObjs[key] = oclt.Drift(l=lattice_elements['Drifts'][key])
 
-	for key in QuadLengths.keys():
+	for key in lattice_elements['QuadLengths'].keys():
 		LattObjs[key] = oclt.Quadrupole( \
-		  l=QuadLengths[key], k1=QuadGradients[key]*Ecorr )
+		  l=lattice_elements['QuadLengths'][key], \
+		  k1 = lattice_elements['QuadGradients'][key]*Ecorr )
 
-	for key in DipLengths.keys():
+	for key in lattice_elements['DipLengths'].keys():
 		if key == 'DIP1':
 			e1 = 0.0;
-			e2 = DipAngles[key]*Ecorr;
+			e2 = lattice_elements['DipAngles'][key]*Ecorr;
 		elif key == 'DIP2':
-			e1 = DipAngles[key]*Ecorr;
+			e1 = lattice_elements['DipAngles'][key]*Ecorr;
 			e2 =  0.0;
 		elif key == 'DIP3':
 			e1 =  0.0;
-			e2 = -DipAngles[key]*Ecorr;
+			e2 = -lattice_elements['DipAngles'][key]*Ecorr;
 		elif key == 'DIP4':
-			e1 = -DipAngles[key]*Ecorr;
+			e1 = -lattice_elements['DipAngles'][key]*Ecorr;
 			e2 = 0.0;
 
 		LattObjs[key] = oclt.RBend( \
-		  l=DipLengths[key], angle=DipAngles[key]*Ecorr)
+		  l = lattice_elements['DipLengths'][key], 
+		  angle = lattice_elements['DipAngles'][key]*Ecorr )
 
 	for key in  ['IMG1','IMG2','IMG4','IMG5',]:
 		LattObjs[key] = oclt.Marker()
 
-	LattObjs['UNDL1'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
-	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
-	LattObjs['UNDL2'] = oclt.Undulator(Kx=UndulConfigs['Strength'],\
-	  nperiods=UndulConfigs['NumPeriods'],lperiod=UndulConfigs['Period'])
+	LattObjs['UNDL1'] = oclt.Undulator(\
+	  Kx = lattice_elements['UndulConfigs']['Strength'],\
+	  nperiods = lattice_elements['UndulConfigs']['NumPeriods'],\
+	  lperiod = lattice_elements['UndulConfigs']['Period'])
+	LattObjs['UNDL2'] = oclt.Undulator(\
+	  Kx = lattice_elements['UndulConfigs']['Strength'],\
+	  nperiods = lattice_elements['UndulConfigs']['NumPeriods'],\
+	  lperiod = lattice_elements['UndulConfigs']['Period'])
+
+	LattObjs = [LattObjs[key] for key in cell_keys]
+
 	return LattObjs
 
-def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
-  QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
-  stop_key=None, method=method, Nit = 1,output = None,\
-  verbose=False):
+def make_shot(p_arrays, lattice_elements, cell_keys, \
+  BeamEnergy_ref,start_key=None, stop_key=None, \
+  method=method, Nit = 1,output = None,verbose=False):
 
 	"""
 	Performs the transport simulation through a COXINEL-type transport line.
@@ -282,11 +291,9 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	Parameters
 	----------
 	p_arrays: list or single oclt.ParticleArray object
-	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
-	 defined in make_line
+	lattice_elements: line parameters as defined in make_line
 	stop_key : str
-	  key-name of lattice element at which to stop the transport
+	  key-name of lattice element at which to stop the transport (exclusive)
 	method : oclt.methodTM
 	  transport method (works with first or second orders)
 	Nit : int
@@ -305,24 +312,25 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	"""
 
-	latt_elmts = make_line(\
-	  Drifts = Drifts, QuadLengths=QuadLengths,\
-	  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-	  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
+	latt_objs = make_line(lattice_elements, cell_keys, \
 	  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,)
 
 	if stop_key!=None and start_key!=None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-		  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
+		stop_indx = cell_keys.index(stop_key)-1
+		start_indx = cell_keys.index(start_key)
+		lat = oclt.MagneticLattice(latt_objs, method=method, \
+		  start=latt_objs[start_indx], stop=latt_objs[stop_indx])
 	elif stop_key!=None and start_key==None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,stop=latt_elmts[stop_key])
+		stop_indx = cell_keys.index(stop_key)-1
+		lat = oclt.MagneticLattice(latt_objs, method=method, \
+		  stop=latt_objs[stop_indx])
 	elif stop_key==None and start_key!=None:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method,start=latt_elmts[start_key])
+		start_indx = cell_keys.index(start_key)
+		lat = oclt.MagneticLattice(latt_objs, method=method,\
+		  start=latt_objs[start_indx])
 	else:
-		lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-		  method=method)
+		lat = oclt.MagneticLattice(latt_objs, method=method)
+
 	dz = lat.totalLen/Nit
 	if type(p_arrays)!=list: p_arrays = [p_arrays,]
 
@@ -331,24 +339,24 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 		for key in output: outputs[key] = np.zeros(Nit+1)
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(\
-		  Drifts = Drifts, QuadLengths=QuadLengths,\
-		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
+		latt_objs = make_line(lattice_elements, cell_keys, \
+		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
 
 		if stop_key!=None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
+			stop_indx = cell_keys.index(stop_key)-1
+			start_indx = cell_keys.index(start_key)
+			lat = oclt.MagneticLattice(latt_objs, method=method,\
+			  start=latt_objs[start_indx],stop=latt_objs[stop_indx])
 		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
+			stop_indx = cell_keys.index(stop_key)-1
+			lat = oclt.MagneticLattice(latt_objs, method=method,\
+			  stop=latt_objs[stop_indx])
 		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
+			start_indx = cell_keys.index(start_key)
+			lat = oclt.MagneticLattice(latt_objs,method=method,\
+			  start=latt_objs[start_indx])
 		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method)
+			lat = oclt.MagneticLattice(latt_objs, method=method)
 
 		navi = oclt.Navigator(lat)
 		sss = '\r'+'Transporing slice '+str(i+1)+' of '+str(len(p_arrays))+':'
@@ -361,11 +369,9 @@ def make_shot(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 
 	return p_arrays, outputs
 
-def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
-  QuadGradients=QuadGradients,DipLengths=DipLengths,\
-  DipAngles=DipAngles,UndulConfigs=UndulConfigs,\
-  BeamEnergy=BeamEnergy_ref, BeamEnergy_ref=BeamEnergy_ref,start_key=None,\
-  stop_key=None, method=method,verbose=False):
+def aligh_slices(p_arrays, lattice_elements, cell_keys,\
+  BeamEnergy_ref, start_key=None, stop_key=None,\
+  method=method,verbose=False):
 
 	"""
 	Aligns the slices of the spectrally sliced beam at the end of 
@@ -374,11 +380,9 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	Parameters
 	----------
 	p_arrays: list of oclt.ParticleArray objects
-	Drifts, QuadLengths, QuadGradients, DipLengths,\
-	 DipAngles,UndulConfigs,BeamEnergy, BeamEnergy_ref : line parameters as 
-	 defined in make_line and make_shot
+	lattice_elements: line parameters as defined in make_line and make_shot
 	stop_key : str
-	  key-name of lattice element at which to stop the transport
+	  key-name of lattice element at which to stop the transport (exclusive)
 	method : oclt.methodTM
 	  transport method (works with first or second orders)
 
@@ -399,26 +403,27 @@ def aligh_slices(p_arrays, Drifts = Drifts,QuadLengths=QuadLengths,\
 	r16 = []
 	r36 = []
 	r56 = []
+	method_ord1 = oclt.MethodTM()
 
 	for i in range(len(p_arrays)):
-		latt_elmts = make_line(\
-		  Drifts = Drifts, QuadLengths=QuadLengths,\
-		  QuadGradients=QuadGradients, DipLengths=DipLengths,\
-		  DipAngles=DipAngles, UndulConfigs=UndulConfigs,\
-		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref,)
+		latt_objs = make_line(lattice_elements, cell_keys, \
+		  BeamEnergy=p_arrays[i].E, BeamEnergy_ref=BeamEnergy_ref)
 
 		if stop_key!=None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys], \
-			  method=method,start=latt_elmts[start_key],stop=latt_elmts[stop_key])
+			stop_indx = cell_keys.index(stop_key)-1
+			start_indx = cell_keys.index(start_key)
+			lat = oclt.MagneticLattice(latt_objs, method=method_ord1,\
+			  start=latt_objs[start_indx],stop=latt_objs[stop_indx])
 		elif stop_key!=None and start_key==None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,stop=latt_elmts[stop_key])
+			stop_indx = cell_keys.index(stop_key)-1
+			lat = oclt.MagneticLattice(latt_objs, method=method_ord1,\
+			  stop=latt_objs[stop_indx])
 		elif stop_key==None and start_key!=None:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method,start=latt_elmts[start_key])
+			start_indx = cell_keys.index(start_key)
+			lat = oclt.MagneticLattice(latt_objs, method=method_ord1,\
+			  start=latt_objs[start_indx])
 		else:
-			lat = oclt.MagneticLattice([latt_elmts[key] for key in cell_keys],\
-			  method=method)
+			lat = oclt.MagneticLattice(latt_objs, method=method_ord1)
 
 		oclt.cpbd.optics.lattice_transfer_map_R(lat,p_arrays[i].E)
 		r16.append(lat.R[0,5])
@@ -488,7 +493,8 @@ def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
 			  .reshape((Num_loc,6))[indx,:].flatten()
 			p_arrays[i].q_array = p_arrays[i].q_array[indx]
 
-	for i in to_pop[::-1]: p_arrays.pop(i)
+	for i in to_pop[::-1]: 
+		p_arrays.pop(i)
 	return p_arrays
 
 
@@ -687,7 +693,7 @@ def ocelot_to_chimera(p_arrays,beam,lam0,keep_orig=True,\
 
 	return  beam
 
-def print_latt_chars(lat, BeamEnergy):
+def print_latt_chars(latt_objs, BeamEnergy):
 	"""
 	Prints some elements of the transport matrices
 	Parameters
@@ -696,6 +702,7 @@ def print_latt_chars(lat, BeamEnergy):
 	BeamEnergy : float
 	  Electron energy in GEVs
    """
+	lat = oclt.MagneticLattice(latt_objs,method=method)
 	oclt.cpbd.optics.lattice_transfer_map_RT(lat,BeamEnergy)
 	params = [lat.R[0,0],lat.R[2,2],lat.R[4,5]*1000,\
 	  lat.T[1,1,5], lat.T[3,3,5],lat.T[0,1,5],lat.T[2,3,5]]
