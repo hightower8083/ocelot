@@ -77,18 +77,33 @@ def make_beam(bm):
 
 	"""
 
+	if 'Features' not in bm: bm['Features'] = ()
 	if 'X0' not in bm: bm['X0'] = 0.
 	if 'Y0' not in bm: bm['Y0'] = 0.
 	if 'Z0' not in bm: bm['Z0'] = 0.
 
-	parts0    = np.zeros((6,bm['Np']))
-	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])+bm['X0']
-	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])+bm['Y0']
-	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])+bm['Z0']
+	p_array = oclt.ParticleArray()
+	parts0 = np.zeros((6,bm['Np']))
+
+	if 'FlatX' in bm['Features']:
+		parts0[0] = bm['X0'] + bm['Rx']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[0] = bm['X0'] + bm['Rx']*np.random.randn(bm['Np'])
+
+	if 'FlatY' in bm['Features']:
+		parts0[2] = bm['Y0'] + bm['Ry']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[2] = bm['Y0'] + bm['Ry']*np.random.randn(bm['Np'])
+
+	if 'FlatZ' in bm['Features']:
+		parts0[4] = bm['Z0'] + bm['Lz']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[4] = bm['Z0'] + bm['Lz']*np.random.randn(bm['Np'])
+
 	parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
 	parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
 	parts0[5] = bm['dE']*np.random.randn(bm['Np'])
-	p_array = oclt.ParticleArray()
+
 	p_array.particles = parts0.T.flatten()
 	p_array.E = bm['E']
 	p_array.s = 0.0
@@ -165,6 +180,8 @@ def make_beam_contin(bm, div_chirp=None):
 	"""
 	p_array = oclt.ParticleArray()
 
+	if 'Features' not in bm: bm['Features'] = ()
+
 	E1 = bm['E'][0]
 	E2 = bm['E'][1]
 	dE = (E2-E1)/(E2+E1)
@@ -175,9 +192,22 @@ def make_beam_contin(bm, div_chirp=None):
 	if 'Z0' not in bm: bm['Z0'] = 0.
 
 	parts0 = np.zeros((6,bm['Np']))
-	parts0[0] = bm['Rx']*np.random.randn(bm['Np'])+bm['X0']
-	parts0[2] = bm['Ry']*np.random.randn(bm['Np'])+bm['Y0']
-	parts0[4] = bm['Lz']*np.random.randn(bm['Np'])+bm['Z0']
+
+	if 'FlatX' in bm['Features']:
+		parts0[0] = bm['X0'] + bm['Rx']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[0] = bm['X0'] + bm['Rx']*np.random.randn(bm['Np'])
+
+	if 'FlatY' in bm['Features']:
+		parts0[2] = bm['Y0'] + bm['Ry']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[2] = bm['Y0'] + bm['Ry']*np.random.randn(bm['Np'])
+
+	if 'FlatZ' in bm['Features']:
+		parts0[4] = bm['Z0'] + bm['Lz']*(2*np.random.rand(bm['Np'])-1)
+	else:
+		parts0[4] = bm['Z0'] + bm['Lz']*np.random.randn(bm['Np'])
+
 	parts0[5] = dE*(2*np.random.rand(bm['Np'])-1)
 
 	if div_chirp!=None:
@@ -471,10 +501,10 @@ def insert_slit(p_arrays,cntr = 0.0, width=np.inf, comp='x'):
 	for i in range(len(p_arrays)):
 		if comp=='x':
 			x = p_arrays[i].x() + p_arrays[i].x_c
-			coord = (x-cntr)/width
+			coord = (x-cntr)/width*2
 		elif comp=='y':
 			y = p_arrays[i].y() + p_arrays[i].y_c
-			coord = (y-cntr)/width
+			coord = (y-cntr)/width*2
 		elif comp=='rectangular':
 			x = p_arrays[i].x() + p_arrays[i].x_c
 			y = p_arrays[i].y() + p_arrays[i].y_c
