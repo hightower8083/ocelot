@@ -77,32 +77,38 @@ def make_beam(bm):
 
 	"""
 
-	if 'Features' not in bm: bm['Features'] = ()
+	p_array = oclt.ParticleArray()
+
+	if 'Features' not in bm:
+		bm['Features'] = {}
+	if 'RandomSeed' not in bm['Features']:
+		bm['Features']['RandomSeed'] = int(np.random.rand()*1e7)
+	rnd = np.random.RandomState(seed = bm['Features']['RandomSeed'])
+
 	if 'X0' not in bm: bm['X0'] = 0.
 	if 'Y0' not in bm: bm['Y0'] = 0.
 	if 'Z0' not in bm: bm['Z0'] = 0.
 
-	p_array = oclt.ParticleArray()
 	parts0 = np.zeros((6,bm['Np']))
 
 	if 'FlatX' in bm['Features']:
-		parts0[0] = bm['X0'] + bm['Rx']*(2*np.random.rand(bm['Np'])-1)
+		parts0[0] = bm['X0'] + bm['Rx']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[0] = bm['X0'] + bm['Rx']*np.random.randn(bm['Np'])
+		parts0[0] = bm['X0'] + bm['Rx']*rnd.randn(bm['Np'])
 
 	if 'FlatY' in bm['Features']:
-		parts0[2] = bm['Y0'] + bm['Ry']*(2*np.random.rand(bm['Np'])-1)
+		parts0[2] = bm['Y0'] + bm['Ry']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[2] = bm['Y0'] + bm['Ry']*np.random.randn(bm['Np'])
+		parts0[2] = bm['Y0'] + bm['Ry']*rnd.randn(bm['Np'])
 
 	if 'FlatZ' in bm['Features']:
-		parts0[4] = bm['Z0'] + bm['Lz']*(2*np.random.rand(bm['Np'])-1)
+		parts0[4] = bm['Z0'] + bm['Lz']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[4] = bm['Z0'] + bm['Lz']*np.random.randn(bm['Np'])
+		parts0[4] = bm['Z0'] + bm['Lz']*rnd.randn(bm['Np'])
 
-	parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
-	parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
-	parts0[5] = bm['dE']*np.random.randn(bm['Np'])
+	parts0[1] = bm['Ox']*rnd.randn(bm['Np'])
+	parts0[3] = bm['Oy']*rnd.randn(bm['Np'])
+	parts0[5] = bm['dE']*rnd.randn(bm['Np'])
 
 	p_array.particles = parts0.T.flatten()
 	p_array.E = bm['E']
@@ -141,6 +147,12 @@ def make_beam_sliced(bm,dg=0.002,div_chirp=None):
 	"""
 
 	p_arrays = []
+	if 'Features' not in bm:
+		bm['Features'] = {}
+	if 'RandomSeed' not in bm['Features']:
+		bm['Features']['RandomSeed'] = int(np.random.rand()*1e7)
+	rnd = np.random.RandomState(seed=bm['Features']['RandomSeed'])
+
 	E1 = bm['E'][0]
 	E2 = bm['E'][1]
 	nrg_sliced =  sliced_spectrum(E1,E2,dg=dg)
@@ -149,14 +161,16 @@ def make_beam_sliced(bm,dg=0.002,div_chirp=None):
 	part_per_slice = np.round(bm['Np'] \
 	  *(nrg_sliced[1:]-nrg_sliced[:-1]) \
 	  /(nrg_sliced[-1]-nrg_sliced[0])).astype('i')
+	rnd_seeds = (rnd.rand(Nbeams)*1e7).astype('l')
+
 	for i in range(Nbeams):
 		beam = oclt.deepcopy(bm)
 		beam['Np'] = part_per_slice[i]
 		beam['Q'] /= int(bm['Np']/beam['Np'])
 		beam['E'] = (nrg_sliced[i],nrg_sliced[i+1])
+		beam['Features']['RandomSeed'] = rnd_seeds[i]
 		p_arrays.append(make_beam_contin(beam,div_chirp=div_chirp))
 	return p_arrays
-
 
 def make_beam_contin(bm, div_chirp=None):
 	"""
@@ -180,7 +194,11 @@ def make_beam_contin(bm, div_chirp=None):
 	"""
 	p_array = oclt.ParticleArray()
 
-	if 'Features' not in bm: bm['Features'] = ()
+	if 'Features' not in bm:
+		bm['Features'] = {}
+	if 'RandomSeed' not in bm['Features']:
+		bm['Features']['RandomSeed'] = int(rnd.rand()*1e7)
+	rnd = np.random.RandomState(seed=bm['Features']['RandomSeed'])
 
 	E1 = bm['E'][0]
 	E2 = bm['E'][1]
@@ -194,35 +212,35 @@ def make_beam_contin(bm, div_chirp=None):
 	parts0 = np.zeros((6,bm['Np']))
 
 	if 'FlatX' in bm['Features']:
-		parts0[0] = bm['X0'] + bm['Rx']*(2*np.random.rand(bm['Np'])-1)
+		parts0[0] = bm['X0'] + bm['Rx']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[0] = bm['X0'] + bm['Rx']*np.random.randn(bm['Np'])
+		parts0[0] = bm['X0'] + bm['Rx']*rnd.randn(bm['Np'])
 
 	if 'FlatY' in bm['Features']:
-		parts0[2] = bm['Y0'] + bm['Ry']*(2*np.random.rand(bm['Np'])-1)
+		parts0[2] = bm['Y0'] + bm['Ry']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[2] = bm['Y0'] + bm['Ry']*np.random.randn(bm['Np'])
+		parts0[2] = bm['Y0'] + bm['Ry']*rnd.randn(bm['Np'])
 
 	if 'FlatZ' in bm['Features']:
-		parts0[4] = bm['Z0'] + bm['Lz']*(2*np.random.rand(bm['Np'])-1)
+		parts0[4] = bm['Z0'] + bm['Lz']*(2*rnd.rand(bm['Np'])-1)
 	else:
-		parts0[4] = bm['Z0'] + bm['Lz']*np.random.randn(bm['Np'])
+		parts0[4] = bm['Z0'] + bm['Lz']*rnd.randn(bm['Np'])
 
-	parts0[5] = dE*(2*np.random.rand(bm['Np'])-1)
+	parts0[5] = dE*(2*rnd.rand(bm['Np'])-1)
 
 	if div_chirp!=None:
 		pz0 = np.sqrt( (div_chirp/mc2_GeV)**2-1. )
 		pz = (p_array.E/mc2_GeV)*(1+parts0[5])
 
-		px =  bm['Ox']*pz0*np.random.randn(bm['Np'])
-		py =  bm['Oy']*pz0*np.random.randn(bm['Np'])
+		px =  bm['Ox']*pz0*rnd.randn(bm['Np'])
+		py =  bm['Oy']*pz0*rnd.randn(bm['Np'])
 
-		parts0[1] = bm['Ox']*np.random.randn(bm['Np'])*(pz0/pz)**1.4
-		parts0[3] = bm['Oy']*np.random.randn(bm['Np'])*(pz0/pz)**1.4
+		parts0[1] = bm['Ox']*rnd.randn(bm['Np'])*(pz0/pz)**1.4
+		parts0[3] = bm['Oy']*rnd.randn(bm['Np'])*(pz0/pz)**1.4
 
 	else:
-		parts0[1] = bm['Ox']*np.random.randn(bm['Np'])
-		parts0[3] = bm['Oy']*np.random.randn(bm['Np'])
+		parts0[1] = bm['Ox']*rnd.randn(bm['Np'])
+		parts0[3] = bm['Oy']*rnd.randn(bm['Np'])
 
 	p_array.particles = parts0.T.flatten()
 	p_array.s = 0.0
